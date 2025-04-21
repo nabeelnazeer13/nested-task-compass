@@ -1,13 +1,16 @@
-
 import React from 'react';
-import { useTaskContext, Project } from '@/context/TaskContext';
+import { useTaskContext, Project, Task } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import AddTaskDialog from './AddTaskDialog';
+import FilterButton from '@/components/filters/FilterButton';
+import FilterPills from '@/components/filters/FilterPills';
+import { useFilterContext, FilterType, ViewMode } from '@/context/FilterContext';
 
 const ProjectView: React.FC = () => {
-  const { projects } = useTaskContext();
+  const { projects, tasks } = useTaskContext();
+  const { activeFilters, viewMode, excludeCompleted } = useFilterContext();
   const [isAddTaskOpen, setIsAddTaskOpen] = React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
 
@@ -16,22 +19,70 @@ const ProjectView: React.FC = () => {
     setIsAddTaskOpen(true);
   };
 
+  const getFilteredTasks = () => {
+    let filteredTasks = [...tasks];
+    
+    if (excludeCompleted) {
+      filteredTasks = filteredTasks.filter(task => task.status !== 'done');
+    }
+    
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case FilterType.PRIORITY:
+          filteredTasks = filteredTasks.filter(task => task.priority === filter.value);
+          break;
+        case FilterType.STATUS:
+          filteredTasks = filteredTasks.filter(task => task.status === filter.value);
+          break;
+        case FilterType.PROJECT:
+          filteredTasks = filteredTasks.filter(task => task.projectId === filter.value);
+          break;
+      }
+    });
+    
+    return filteredTasks;
+  };
+
+  const getFilteredProjects = () => {
+    const filteredTasks = getFilteredTasks();
+    const projectIds = new Set(filteredTasks.map(task => task.projectId));
+    return projects.filter(project => projectIds.has(project.id));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Projects & Tasks</h2>
+        <div className="flex gap-2">
+          <FilterButton />
+        </div>
       </div>
 
+      <FilterPills />
+
       {projects.length > 0 ? (
-        <div className="space-y-4">
-          {projects.map((project) => (
-            <ProjectItem 
-              key={project.id} 
-              project={project}
-              onAddTask={() => handleAddTask(project.id)}
-            />
-          ))}
-        </div>
+        viewMode === ViewMode.GROUP_BY_PROJECT ? (
+          <div className="space-y-4">
+            {getFilteredProjects().map((project) => (
+              <ProjectItem 
+                key={project.id} 
+                project={project}
+                onAddTask={() => handleAddTask(project.id)}
+                filteredTasks={getFilteredTasks().filter(task => task.projectId === project.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {projects.map((project) => (
+              <ProjectItem 
+                key={project.id} 
+                project={project}
+                onAddTask={() => handleAddTask(project.id)}
+              />
+            ))}
+          </div>
+        )
       ) : (
         <div className="text-center py-10">
           <p className="text-muted-foreground mb-4">No projects yet. Create your first project to get started!</p>
