@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 100% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -34,21 +35,14 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 210 50% 98%;
+    --sidebar-foreground: 210 50% 20%;
+    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 50% 95%;
+    --sidebar-accent-foreground: 210 50% 20%;
+    --sidebar-border: 210 50% 90%;
+    --sidebar-ring: 210 100% 50%;
   }
 
   .dark {
@@ -61,7 +55,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 210 100% 60%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -79,14 +73,15 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    
+    --sidebar-background: 215 28% 17%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 215 25% 25%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 25% 25%;
+    --sidebar-ring: 210 100% 60%;
   }
 }
 
@@ -98,4 +93,42 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom Styles for Tasks */
+.task-container {
+  @apply transition-all duration-200;
+}
+
+.task-item {
+  @apply hover:bg-accent/50 rounded-md;
+}
+
+.task-children {
+  @apply pl-6 border-l border-border ml-2 transition-all duration-200;
+}
+
+/* Calendar Styles */
+.calendar-day {
+  @apply border border-border min-h-24 p-1;
+}
+
+.calendar-task {
+  @apply text-xs p-1 rounded mb-1 truncate cursor-pointer;
+}
+
+.priority-high {
+  @apply bg-task-high/10 border-l-2 border-task-high text-task-high;
+}
+
+.priority-medium {
+  @apply bg-task-medium/10 border-l-2 border-task-medium text-task-medium;
+}
+
+.priority-low {
+  @apply bg-task-low/10 border-l-2 border-task-low text-task-low;
+}
+
+.task-completed {
+  @apply line-through opacity-50;
 }
