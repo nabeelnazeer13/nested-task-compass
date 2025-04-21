@@ -6,11 +6,7 @@ import { useTaskContext } from '@/context/TaskContext';
 import ProjectView from '@/components/projects/ProjectView';
 import CalendarView from '@/components/calendar/CalendarView';
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
-
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout() {
   const { selectedView } = useTaskContext();
 
   return (
@@ -32,3 +28,4 @@ export function AppLayout({ children }: AppLayoutProps) {
 }
 
 export default AppLayout;
+
