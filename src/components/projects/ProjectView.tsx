@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTaskContext, Project, Task } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -68,7 +69,6 @@ const ProjectView: React.FC = () => {
                 key={project.id} 
                 project={project}
                 onAddTask={() => handleAddTask(project.id)}
-                filteredTasks={getFilteredTasks().filter(task => task.projectId === project.id)}
               />
             ))}
           </div>

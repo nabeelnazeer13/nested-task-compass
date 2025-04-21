@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, SliderHorizontal } from 'lucide-react';
+import { Filter, SlidersHorizontal } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
