@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Define our types
@@ -48,8 +47,8 @@ interface TaskContextType {
   addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => void;
   updateTimeBlock: (timeBlock: TimeBlock) => void;
   deleteTimeBlock: (timeBlockId: string) => void;
-  selectedView: 'projects' | 'calendar';
-  setSelectedView: (view: 'projects' | 'calendar') => void;
+  selectedView: 'projects' | 'list' | 'calendar';
+  setSelectedView: (view: 'projects' | 'list' | 'calendar') => void;
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 }
@@ -120,7 +119,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
-  const [selectedView, setSelectedView] = useState<'projects' | 'calendar'>('projects');
+  const [selectedView, setSelectedView] = useState<'projects' | 'list' | 'calendar'>('projects');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Local Storage persistence
