@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Project, Task, TimeBlock, TimeTracking, TaskContextType, ReactNode } from './TaskTypes';
+import { Project, Task, TimeBlock, TimeTracking, TaskContextType, ReactNode, Priority } from './TaskTypes';
 import { sampleProjects, sampleTasks, sampleTimeBlocks } from './TaskMockData';
 import { useProjectActions } from './TaskProjectActions';
 import { useTaskActions } from './TaskTaskActions';
@@ -206,3 +207,6 @@ export const useTaskContext = () => {
   }
   return context;
 };
+
+// Re-export all the types from TaskTypes to maintain backward compatibility
+export type { Task, Project, TimeBlock, TimeTracking, Priority, TaskContextType };
