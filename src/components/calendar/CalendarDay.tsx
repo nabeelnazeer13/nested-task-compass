@@ -81,7 +81,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop }) =>
         {tasks.map((task) => (
           <div 
             key={task.id}
-            className={`calendar-task ${task.status === 'done' ? 'task-completed' : ''} ${
+            className={`calendar-task ${
               task.priority === 'high' ? 'bg-red-100 border-l-2 border-red-500' : 
               task.priority === 'medium' ? 'bg-yellow-100 border-l-2 border-yellow-500' : 
               'bg-blue-100 border-l-2 border-blue-500'

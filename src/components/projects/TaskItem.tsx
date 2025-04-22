@@ -8,7 +8,7 @@ import {
   Calendar, 
   Plus,
   Clock,
-  Notes
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -111,7 +111,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
             
             {task.notes && (
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
-                <Notes size={12} />
+                <FileText size={12} />
                 Notes
               </Badge>
             )}

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useFilterContext, FilterType, FilterOperator, ViewMode } from '@/context/FilterContext';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Priority, Status } from '@/context/TaskContext';
+import { Priority } from '@/context/TaskContext';
 
 const FilterButton: React.FC = () => {
   const { 
@@ -34,7 +34,7 @@ const FilterButton: React.FC = () => {
     });
   };
 
-  const handleAddStatusFilter = (status: Status) => {
+  const handleAddStatusFilter = (status: string) => {
     addFilter({
       type: FilterType.STATUS,
       value: status,

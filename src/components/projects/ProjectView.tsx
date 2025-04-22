@@ -23,21 +23,17 @@ const ProjectView: React.FC = () => {
   const getFilteredTasks = () => {
     let filteredTasks = [...tasks];
     
-    if (excludeCompleted) {
-      filteredTasks = filteredTasks.filter(task => task.status !== 'done');
-    }
+    // We're no longer filtering by completed status since it's been removed
     
     activeFilters.forEach(filter => {
       switch (filter.type) {
         case FilterType.PRIORITY:
           filteredTasks = filteredTasks.filter(task => task.priority === filter.value);
           break;
-        case FilterType.STATUS:
-          filteredTasks = filteredTasks.filter(task => task.status === filter.value);
-          break;
         case FilterType.PROJECT:
           filteredTasks = filteredTasks.filter(task => task.projectId === filter.value);
           break;
+        // Remove FilterType.STATUS case since status has been removed
       }
     });
     
