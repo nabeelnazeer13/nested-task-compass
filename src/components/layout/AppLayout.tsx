@@ -25,6 +25,13 @@ const AppLayout = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    // Ensure we correctly set the selected view based on the tab value
+    if (value === 'projects' || value === 'list' || value === 'calendar') {
+      setSelectedView(value);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-8">
       <header className="flex justify-between items-center">
@@ -70,8 +77,8 @@ const AppLayout = () => {
 
       <Tabs 
         defaultValue="projects" 
-        value={selectedView === 'calendar' ? 'calendar' : 'projects'}
-        onValueChange={(value) => setSelectedView(value === 'calendar' ? 'calendar' : 'projects')}
+        value={selectedView}
+        onValueChange={handleTabChange}
       >
         <TabsList className="grid grid-cols-3 w-[400px]">
           <TabsTrigger value="projects">Projects</TabsTrigger>
