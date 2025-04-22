@@ -18,7 +18,8 @@ const CalendarView: React.FC = () => {
   const [showTaskList, setShowTaskList] = useState(true);
   const [showMiniCalendar, setShowMiniCalendar] = useState(false);
   
-  const getFilteredTasks = () => {
+  // Only filter tasks WITHOUT a dueDate for the sidebar now
+  const getUndatedTasks = () => {
     let filteredTasks = [...tasks];
     activeFilters.forEach(filter => {
       switch (filter.type) {
@@ -30,18 +31,26 @@ const CalendarView: React.FC = () => {
           break;
       }
     });
-    return filteredTasks;
+    // Only tasks without a dueDate
+    return filteredTasks.filter(task => !task.dueDate);
   };
 
-  const tasksWithDueDate = getFilteredTasks().filter(task => task.dueDate);
-  const tasksWithoutDueDate = getFilteredTasks().filter(task => !task.dueDate);
-  
+  // Only date-specific tasks for display in calendar grid
   const getTasksForDate = (date: Date) => {
-    return tasksWithDueDate.filter(task => 
-      task.dueDate && isSameDay(task.dueDate, date)
-    );
+    let filteredTasks = [...tasks];
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case FilterType.PRIORITY:
+          filteredTasks = filteredTasks.filter(task => task.priority === filter.value);
+          break;
+        case FilterType.PROJECT:
+          filteredTasks = filteredTasks.filter(task => task.projectId === filter.value);
+          break;
+      }
+    });
+    return filteredTasks.filter(task => task.dueDate && isSameDay(task.dueDate, date));
   };
-  
+
   const getDaysToDisplay = () => {
     if (view === 'day') {
       return [selectedDate];
@@ -57,7 +66,7 @@ const CalendarView: React.FC = () => {
   };
 
   const daysToDisplay = getDaysToDisplay();
-  
+
   const navigatePrevious = () => {
     if (view === 'day') {
       setSelectedDate(addDays(selectedDate, -1));
@@ -67,7 +76,7 @@ const CalendarView: React.FC = () => {
       setSelectedDate(addDays(selectedDate, -28));
     }
   };
-  
+
   const navigateNext = () => {
     if (view === 'day') {
       setSelectedDate(addDays(selectedDate, 1));
@@ -77,7 +86,7 @@ const CalendarView: React.FC = () => {
       setSelectedDate(addDays(selectedDate, 28));
     }
   };
-  
+
   const navigateToday = () => {
     setSelectedDate(new Date());
   };
@@ -183,43 +192,21 @@ const CalendarView: React.FC = () => {
               Tasks
             </div>
             <div className="p-2 divide-y">
-              {getFilteredTasks().length > 0 ? (
-                <>
-                  <div className="py-2">
-                    <h4 className="font-medium text-sm mb-2">Tasks with dates</h4>
-                    {tasksWithDueDate.map(task => (
-                      <div 
-                        key={task.id}
-                        className="p-2 mb-1 bg-background border rounded-sm text-sm hover:bg-muted cursor-grab"
-                        draggable
-                        onDragStart={() => handleDragStart(task)}
-                      >
-                        <div className="font-medium">{task.title}</div>
-                        {task.dueDate && (
-                          <div className="text-xs text-muted-foreground">
-                            Due: {format(task.dueDate, 'MMM d')}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {tasksWithoutDueDate.length > 0 && (
-                    <div className="py-2">
-                      <h4 className="font-medium text-sm mb-2">Tasks without dates</h4>
-                      {tasksWithoutDueDate.map(task => (
-                        <div
-                          key={task.id}
-                          className="p-2 mb-1 bg-background border rounded-sm text-sm hover:bg-muted cursor-grab"
-                          draggable
-                          onDragStart={() => handleDragStart(task)}
-                        >
-                          {task.title}
-                        </div>
-                      ))}
+              {/* Show undated tasks only */}
+              {getUndatedTasks().length > 0 ? (
+                <div className="py-2">
+                  <h4 className="font-medium text-sm mb-2">Tasks without dates</h4>
+                  {getUndatedTasks().map(task => (
+                    <div
+                      key={task.id}
+                      className="p-2 mb-1 bg-background border rounded-sm text-sm hover:bg-muted cursor-grab"
+                      draggable
+                      onDragStart={() => handleDragStart(task)}
+                    >
+                      {task.title}
                     </div>
-                  )}
-                </>
+                  ))}
+                </div>
               ) : (
                 <div className="py-4 text-center text-muted-foreground">
                   No tasks match your current filters
