@@ -1,252 +1,15 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Project, Task, TimeBlock, TimeTracking, TaskContextType, ReactNode } from './TaskTypes';
+import { sampleProjects, sampleTasks, sampleTimeBlocks } from './TaskMockData';
+import { useProjectActions } from './TaskProjectActions';
+import { useTaskActions } from './TaskTaskActions';
+import { useTimeBlockActions } from './TaskTimeBlockActions';
+import { useTimeTrackingActions } from './TaskTimeTrackingActions';
+import { findTaskById, getRootTasks, updateTaskInHierarchy } from './TaskHelpers';
 
-// Define our types
-export type Priority = 'low' | 'medium' | 'high';
-
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  dueDate?: Date;
-  priority: Priority;
-  parentId?: string;
-  projectId: string;
-  children: Task[];
-  isExpanded?: boolean;
-  notes?: string;
-  estimatedTime?: number; // in minutes
-  timeTracked: number; // in minutes
-}
-
-export interface TimeTracking {
-  id: string;
-  taskId: string;
-  startTime: Date;  // Actual timestamp when tracking started
-  endTime?: Date;   // Actual timestamp when tracking ended (optional for ongoing tracking)
-  duration: number; // Calculated duration in minutes (for completed tracking)
-  notes?: string;   // Optional notes about what was done during this time
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  isExpanded?: boolean;
-}
-
-export interface TimeBlock {
-  id: string;
-  taskId: string;
-  date: Date;
-  startTime: string;
-  endTime: string;
-}
-
-interface TaskContextType {
-  projects: Project[];
-  tasks: Task[];
-  timeBlocks: TimeBlock[];
-  timeTrackings: TimeTracking[];
-  activeTimeTracking: TimeTracking | null;
-  addProject: (project: Omit<Project, 'id' | 'isExpanded'>) => void;
-  updateProject: (project: Project) => void;
-  deleteProject: (projectId: string) => void;
-  toggleProjectExpanded: (projectId: string) => void;
-  addTask: (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => void;
-  updateTask: (task: Task) => void;
-  deleteTask: (taskId: string) => void;
-  toggleTaskExpanded: (taskId: string) => void;
-  addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => void;
-  updateTimeBlock: (timeBlock: TimeBlock) => void;
-  deleteTimeBlock: (timeBlockId: string) => void;
-  startTimeTracking: (taskId: string, notes?: string) => void;
-  stopTimeTracking: () => void;
-  addTimeTracking: (timeTracking: Omit<TimeTracking, 'id'>) => void;
-  updateTimeTracking: (timeTracking: TimeTracking) => void;
-  deleteTimeTracking: (timeTrackingId: string) => void;
-  selectedView: 'projects' | 'list' | 'calendar';
-  setSelectedView: (view: 'projects' | 'list' | 'calendar') => void;
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
-}
+// Compose all functionality as before, keeping async/persistence for now as in-memory with mock data
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
-
-// Helper to generate IDs
-const generateId = () => Math.random().toString(36).substring(2, 11);
-
-// Sample data
-const sampleProjects: Project[] = [
-  { id: "project-1", name: "Personal", description: "Personal goals and errands", isExpanded: true },
-  { id: "project-2", name: "Work", description: "Tasks for work", isExpanded: true },
-  { id: "project-3", name: "Fitness", description: "Workout routines and logs", isExpanded: true },
-  { id: "project-4", name: "Learning", description: "Courses and study items", isExpanded: true },
-];
-
-const sampleTasks: Task[] = [
-  {
-    id: "task-1-1",
-    title: "Buy groceries",
-    description: "Get vegetables, fruits, and snacks",
-    priority: "medium",
-    projectId: "project-1",
-    dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    notes: "",
-    estimatedTime: 45,
-    timeTracked: 0,
-    children: [
-      { id: "task-1-1-1", title: "Fruits", priority: "low", projectId: "project-1", parentId: "task-1-1", timeTracked: 0, children: [] },
-      { id: "task-1-1-2", title: "Vegetables", priority: "medium", projectId: "project-1", parentId: "task-1-1", timeTracked: 0, children: [] },
-    ],
-    isExpanded: true,
-  },
-  {
-    id: "task-1-2",
-    title: "Call plumber",
-    description: "Fix leaking bathroom sink",
-    priority: "high",
-    projectId: "project-1",
-    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    notes: "",
-    estimatedTime: 30,
-    timeTracked: 0,
-    children: [],
-  },
-  {
-    id: "task-1-3",
-    title: "Read a book",
-    description: "Start reading a new fiction novel",
-    priority: "low",
-    projectId: "project-1",
-    notes: "",
-    estimatedTime: 90,
-    timeTracked: 0,
-    children: [],
-  },
-
-  {
-    id: "task-2-1",
-    title: "Prepare presentation",
-    description: "Q2 Project demo slides",
-    priority: "high",
-    projectId: "project-2",
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-    notes: "",
-    estimatedTime: 120,
-    timeTracked: 60,
-    children: [],
-  },
-  {
-    id: "task-2-2",
-    title: "Client meeting",
-    description: "Monthly update with client",
-    priority: "medium",
-    projectId: "project-2",
-    dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-    notes: "",
-    estimatedTime: 60,
-    timeTracked: 0,
-    children: [],
-  },
-  {
-    id: "task-2-3",
-    title: "Update documentation",
-    description: "Sync up README and process docs",
-    priority: "low",
-    projectId: "project-2",
-    notes: "",
-    estimatedTime: 25,
-    timeTracked: 0,
-    children: [],
-  },
-
-  {
-    id: "task-3-1",
-    title: "Morning run",
-    description: "5km run in the park",
-    priority: "medium",
-    projectId: "project-3",
-    dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-    notes: "",
-    estimatedTime: 40,
-    timeTracked: 0,
-    children: [],
-  },
-  {
-    id: "task-3-2",
-    title: "Yoga session",
-    description: "Evening stress relief routine",
-    priority: "low",
-    projectId: "project-3",
-    notes: "",
-    estimatedTime: 30,
-    timeTracked: 0,
-    children: [],
-  },
-  {
-    id: "task-3-3",
-    title: "Gym strength training",
-    description: "Upper body and core",
-    priority: "high",
-    projectId: "project-3",
-    notes: "",
-    estimatedTime: 60,
-    timeTracked: 0,
-    children: [],
-  },
-
-  {
-    id: "task-4-1",
-    title: "Complete TypeScript course",
-    description: "Finish sections 6-9",
-    priority: "high",
-    projectId: "project-4",
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    notes: "",
-    estimatedTime: 180,
-    timeTracked: 30,
-    children: [],
-  },
-  {
-    id: "task-4-2",
-    title: "Study for math exam",
-    description: "Focus on calculus problems",
-    priority: "medium",
-    projectId: "project-4",
-    notes: "",
-    estimatedTime: 120,
-    timeTracked: 0,
-    children: [],
-  },
-  {
-    id: "task-4-3",
-    title: "Watch tutorial videos",
-    description: "React hooks and best practices",
-    priority: "low",
-    projectId: "project-4",
-    notes: "",
-    estimatedTime: 90,
-    timeTracked: 0,
-    children: [],
-  },
-];
-
-const sampleTimeBlocks: TimeBlock[] = [
-  {
-    id: "block-1",
-    taskId: "task-1-1",
-    date: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    startTime: "09:00",
-    endTime: "09:30",
-  },
-  {
-    id: "block-2",
-    taskId: "task-2-1",
-    date: new Date(),
-    startTime: "14:00",
-    endTime: "15:00",
-  },
-];
 
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
@@ -319,6 +82,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('quire-active-timetracking', JSON.stringify(activeTimeTracking));
   }, [projects, tasks, timeBlocks, timeTrackings, activeTimeTracking]);
 
+  // Delegate to actions hooks
+  const projectActions = useProjectActions(projects, setProjects);
+  const taskActions = useTaskActions(tasks, setTasks, () => tasks);
+  const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
+  const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
+
   // Timer effect to update active time tracking
   useEffect(() => {
     if (!activeTimeTracking) return;
@@ -343,187 +112,29 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => clearInterval(intervalId);
   }, [activeTimeTracking]);
 
-  // Project functions
-  const addProject = (project: Omit<Project, 'id' | 'isExpanded'>) => {
-    const newProject = { ...project, id: generateId(), isExpanded: true };
-    setProjects([...projects, newProject]);
-  };
-
-  const updateProject = (project: Project) => {
-    setProjects(projects.map(p => p.id === project.id ? project : p));
-  };
-
-  const deleteProject = (projectId: string) => {
-    setProjects(projects.filter(p => p.id !== projectId));
-    // Delete all tasks associated with this project
-    setTasks(tasks.filter(t => t.projectId !== projectId));
-  };
-
-  const toggleProjectExpanded = (projectId: string) => {
-    setProjects(
-      projects.map(p => 
-        p.id === projectId ? { ...p, isExpanded: !p.isExpanded } : p
-      )
-    );
-  };
-
-  // Helper function to find a task by ID in a nested structure
-  const findTaskById = (taskId: string, taskList: Task[]): Task | undefined => {
-    for (const task of taskList) {
-      if (task.id === taskId) return task;
-      if (task.children.length > 0) {
-        const foundTask = findTaskById(taskId, task.children);
-        if (foundTask) return foundTask;
-      }
-    }
-    return undefined;
-  };
-
-  // Helper function to get all root tasks (no parent)
-  const getRootTasks = () => {
-    return tasks.filter(task => !task.parentId);
-  };
-
-  // Helper function to update a task in the nested structure
-  const updateTaskInHierarchy = (
-    taskId: string,
-    updateFn: (task: Task) => Task,
-    taskList: Task[]
-  ): Task[] => {
-    return taskList.map(task => {
-      if (task.id === taskId) {
-        return updateFn(task);
-      }
-      if (task.children.length > 0) {
-        return {
-          ...task,
-          children: updateTaskInHierarchy(taskId, updateFn, task.children)
-        };
-      }
-      return task;
-    });
-  };
-
-  // Helper function to delete a task from the nested structure
-  const deleteTaskFromHierarchy = (
-    taskId: string,
-    taskList: Task[]
-  ): Task[] => {
-    return taskList.filter(task => {
-      if (task.id === taskId) return false;
-      if (task.children.length > 0) {
-        task.children = deleteTaskFromHierarchy(taskId, task.children);
-      }
-      return true;
-    });
-  };
-
-  // Task functions
-  const addTask = (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => {
-    const newTask: Task = {
-      ...task,
-      id: generateId(),
-      children: [],
-      isExpanded: true,
-      timeTracked: 0
-    };
-
-    if (task.parentId) {
-      // Add as a child task to parent
-      const updatedTasks = updateTaskInHierarchy(
-        task.parentId,
-        (parent) => ({
-          ...parent,
-          children: [...parent.children, newTask]
-        }),
-        getRootTasks()
-      );
-      setTasks(updatedTasks);
-    } else {
-      // Add as a root task
-      setTasks([...getRootTasks(), newTask]);
-    }
-  };
-
-  const updateTask = (task: Task) => {
+  const updateTaskTimeTracked = (taskId: string, additionalMinutes: number) => {
+    const task = findTaskById(taskId, getRootTasks(tasks));
+    if (!task) return;
+    
     if (task.parentId) {
       // Update a child task
       const updatedTasks = updateTaskInHierarchy(
-        task.id,
-        () => task,
-        getRootTasks()
+        taskId,
+        (taskToUpdate) => ({
+          ...taskToUpdate,
+          timeTracked: (taskToUpdate.timeTracked || 0) + additionalMinutes
+        }),
+        getRootTasks(tasks)
       );
       setTasks(updatedTasks);
     } else {
       // Update a root task
-      setTasks(tasks.map(t => t.id === task.id ? task : t));
-    }
-  };
-
-  const deleteTask = (taskId: string) => {
-    const taskToDelete = findTaskById(taskId, getRootTasks());
-    
-    if (!taskToDelete) return;
-    
-    if (taskToDelete.parentId) {
-      // Delete a child task
-      const updatedTasks = updateTaskInHierarchy(
-        taskToDelete.parentId,
-        (parent) => ({
-          ...parent,
-          children: parent.children.filter(child => child.id !== taskId)
-        }),
-        getRootTasks()
-      );
-      setTasks(updatedTasks);
-    } else {
-      // Delete a root task
-      setTasks(tasks.filter(t => t.id !== taskId));
-    }
-    
-    // Also delete any timeblocks associated with this task
-    setTimeBlocks(timeBlocks.filter(tb => tb.taskId !== taskId));
-  };
-
-  const toggleTaskExpanded = (taskId: string) => {
-    const taskToToggle = findTaskById(taskId, getRootTasks());
-    
-    if (!taskToToggle) return;
-    
-    if (taskToToggle.parentId) {
-      // Toggle a child task
-      const updatedTasks = updateTaskInHierarchy(
-        taskId,
-        (task) => ({
-          ...task,
-          isExpanded: !task.isExpanded
-        }),
-        getRootTasks()
-      );
-      setTasks(updatedTasks);
-    } else {
-      // Toggle a root task
       setTasks(tasks.map(t => 
-        t.id === taskId ? { ...t, isExpanded: !t.isExpanded } : t
+        t.id === taskId ? { ...t, timeTracked: (t.timeTracked || 0) + additionalMinutes } : t
       ));
     }
   };
 
-  // TimeBlock functions
-  const addTimeBlock = (timeBlock: Omit<TimeBlock, 'id'>) => {
-    const newTimeBlock = { ...timeBlock, id: generateId() };
-    setTimeBlocks([...timeBlocks, newTimeBlock]);
-  };
-
-  const updateTimeBlock = (timeBlock: TimeBlock) => {
-    setTimeBlocks(timeBlocks.map(tb => tb.id === timeBlock.id ? timeBlock : tb));
-  };
-
-  const deleteTimeBlock = (timeBlockId: string) => {
-    setTimeBlocks(timeBlocks.filter(tb => tb.id !== timeBlockId));
-  };
-
-  // TimeTracking functions
   const startTimeTracking = (taskId: string, notes?: string) => {
     // Check if there's already an active tracking
     if (activeTimeTracking) {
@@ -533,7 +144,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Create a new time tracking
     const newTracking: TimeTracking = {
-      id: generateId(),
+      id: Math.random().toString(36).substring(2, 11),
       taskId,
       startTime: new Date(),
       duration: 0,
@@ -567,90 +178,18 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveTimeTracking(null);
   };
 
-  const updateTaskTimeTracked = (taskId: string, additionalMinutes: number) => {
-    const task = findTaskById(taskId, getRootTasks());
-    if (!task) return;
-    
-    if (task.parentId) {
-      // Update a child task
-      const updatedTasks = updateTaskInHierarchy(
-        taskId,
-        (taskToUpdate) => ({
-          ...taskToUpdate,
-          timeTracked: (taskToUpdate.timeTracked || 0) + additionalMinutes
-        }),
-        getRootTasks()
-      );
-      setTasks(updatedTasks);
-    } else {
-      // Update a root task
-      setTasks(tasks.map(t => 
-        t.id === taskId ? { ...t, timeTracked: (t.timeTracked || 0) + additionalMinutes } : t
-      ));
-    }
-  };
-
-  const addTimeTracking = (timeTracking: Omit<TimeTracking, 'id'>) => {
-    const newTimeTracking = { ...timeTracking, id: generateId() };
-    setTimeTrackings([...timeTrackings, newTimeTracking]);
-    
-    // Update the task's total tracked time if the tracking has a duration
-    if (timeTracking.duration > 0) {
-      updateTaskTimeTracked(timeTracking.taskId, timeTracking.duration);
-    }
-  };
-
-  const updateTimeTracking = (timeTracking: TimeTracking) => {
-    // Get the original time tracking
-    const originalTracking = timeTrackings.find(t => t.id === timeTracking.id);
-    
-    if (originalTracking) {
-      // If the duration changed, update the task's total tracked time
-      const durationDifference = timeTracking.duration - originalTracking.duration;
-      if (durationDifference !== 0) {
-        updateTaskTimeTracked(timeTracking.taskId, durationDifference);
-      }
-    }
-    
-    setTimeTrackings(timeTrackings.map(t => 
-      t.id === timeTracking.id ? timeTracking : t
-    ));
-  };
-
-  const deleteTimeTracking = (timeTrackingId: string) => {
-    const trackingToDelete = timeTrackings.find(t => t.id === timeTrackingId);
-    
-    if (trackingToDelete) {
-      // Update the task's total tracked time by subtracting the deleted tracking's duration
-      updateTaskTimeTracked(trackingToDelete.taskId, -trackingToDelete.duration);
-      
-      // Remove the tracking
-      setTimeTrackings(timeTrackings.filter(t => t.id !== timeTrackingId));
-    }
-  };
-
-  const value = {
+  const value: TaskContextType = {
     projects,
     tasks,
     timeBlocks,
     timeTrackings,
     activeTimeTracking,
-    addProject,
-    updateProject,
-    deleteProject,
-    toggleProjectExpanded,
-    addTask,
-    updateTask,
-    deleteTask,
-    toggleTaskExpanded,
-    addTimeBlock,
-    updateTimeBlock,
-    deleteTimeBlock,
+    ...projectActions,
+    ...taskActions,
+    ...timeBlockActions,
+    ...timeTrackingActions,
     startTimeTracking,
     stopTimeTracking,
-    addTimeTracking,
-    updateTimeTracking,
-    deleteTimeTracking,
     selectedView,
     setSelectedView,
     selectedDate,
