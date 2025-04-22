@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatMinutes } from '@/lib/time-utils';
+import { Switch } from '@/components/ui/switch';
 
 interface AddTimeBlockDialogProps {
   open: boolean;
@@ -35,10 +37,70 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
   task,
   date
 }) => {
-  const { addTimeBlock } = useTaskContext();
+  const { addTimeBlock, timeTrackings } = useTaskContext();
   
   const [startTime, setStartTime] = useState(timeSlots[0]);
   const [endTime, setEndTime] = useState(timeSlots[2]);
+  const [useTrackedTime, setUseTrackedTime] = useState(false);
+  
+  // Get time trackings for this task on this date
+  const taskDayTrackings = timeTrackings.filter(tracking => 
+    tracking.taskId === task.id && 
+    format(new Date(tracking.startTime), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+  );
+  
+  const totalTrackedMinutes = taskDayTrackings.reduce((sum, tracking) => sum + tracking.duration, 0);
+  const hasTrackedTime = totalTrackedMinutes > 0;
+  
+  // Calculate suggested times based on tracked time
+  useEffect(() => {
+    if (!hasTrackedTime || !useTrackedTime) return;
+    
+    // Find earliest start time and latest end time from tracking data
+    if (taskDayTrackings.length > 0) {
+      const earliestTracking = taskDayTrackings.reduce((earliest, current) => {
+        const currentStart = new Date(current.startTime);
+        const earliestStart = new Date(earliest.startTime);
+        return currentStart < earliestStart ? current : earliest;
+      });
+      
+      const latestTracking = taskDayTrackings.reduce((latest, current) => {
+        // If current tracking has no end time, it's ongoing, so use current time
+        const currentEnd = current.endTime ? new Date(current.endTime) : new Date();
+        // If latest has no end time, use current time
+        const latestEnd = latest.endTime ? new Date(latest.endTime) : new Date();
+        return currentEnd > latestEnd ? current : latest;
+      });
+      
+      // Convert to time slot format
+      const startHour = new Date(earliestTracking.startTime).getHours();
+      const startMinute = new Date(earliestTracking.startTime).getMinutes();
+      const roundedStartMinute = startMinute < 30 ? 0 : 30;
+      
+      const endTime = latestTracking.endTime ? new Date(latestTracking.endTime) : new Date();
+      const endHour = endTime.getHours();
+      const endMinute = endTime.getMinutes();
+      const roundedEndMinute = endMinute < 30 ? 0 : 30;
+      const roundUpEndHour = endMinute > 30 ? endHour + 1 : endHour;
+      
+      // Find the closest time slots
+      const formattedStartHour = startHour % 12 === 0 ? 12 : startHour % 12;
+      const startMeridiem = startHour < 12 ? 'AM' : 'PM';
+      const suggestedStart = `${formattedStartHour}:${roundedStartMinute === 0 ? '00' : '30'} ${startMeridiem}`;
+      
+      const formattedEndHour = roundUpEndHour % 12 === 0 ? 12 : roundUpEndHour % 12;
+      const endMeridiem = roundUpEndHour < 12 ? 'AM' : 'PM';
+      const suggestedEnd = `${formattedEndHour}:${roundedEndMinute === 0 ? '00' : '30'} ${endMeridiem}`;
+      
+      // Find the closest matching time slots in our options
+      const closestStartSlot = timeSlots.find(slot => slot === suggestedStart) || timeSlots[0];
+      const closestEndSlot = timeSlots.find(slot => slot === suggestedEnd) || 
+                            timeSlots[Math.min(timeSlots.indexOf(closestStartSlot) + 1, timeSlots.length - 1)];
+      
+      setStartTime(closestStartSlot);
+      setEndTime(closestEndSlot);
+    }
+  }, [useTrackedTime, taskDayTrackings, hasTrackedTime]);
 
   const handleAddTimeBlock = () => {
     addTimeBlock({
@@ -73,6 +135,19 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
               {format(date, 'PPPP')}
             </div>
           </div>
+          
+          {hasTrackedTime && (
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="use-tracked-time"
+                checked={useTrackedTime}
+                onCheckedChange={setUseTrackedTime}
+              />
+              <Label htmlFor="use-tracked-time">
+                Use tracked time ({formatMinutes(totalTrackedMinutes)})
+              </Label>
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
@@ -111,6 +186,23 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
               </Select>
             </div>
           </div>
+          
+          {hasTrackedTime && (
+            <div className="text-sm text-muted-foreground">
+              <Label className="text-sm">Tracked time sessions:</Label>
+              <ul className="mt-1 space-y-1">
+                {taskDayTrackings.map((tracking, idx) => (
+                  <li key={tracking.id} className="flex justify-between">
+                    <span>
+                      {format(new Date(tracking.startTime), 'h:mm a')} - 
+                      {tracking.endTime ? format(new Date(tracking.endTime), ' h:mm a') : ' ongoing'}
+                    </span>
+                    <span>{formatMinutes(tracking.duration)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-end gap-2">

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Define our types
@@ -17,6 +16,15 @@ export interface Task {
   notes?: string;
   estimatedTime?: number; // in minutes
   timeTracked: number; // in minutes
+}
+
+export interface TimeTracking {
+  id: string;
+  taskId: string;
+  startTime: Date;  // Actual timestamp when tracking started
+  endTime?: Date;   // Actual timestamp when tracking ended (optional for ongoing tracking)
+  duration: number; // Calculated duration in minutes (for completed tracking)
+  notes?: string;   // Optional notes about what was done during this time
 }
 
 export interface Project {
@@ -38,6 +46,8 @@ interface TaskContextType {
   projects: Project[];
   tasks: Task[];
   timeBlocks: TimeBlock[];
+  timeTrackings: TimeTracking[];
+  activeTimeTracking: TimeTracking | null;
   addProject: (project: Omit<Project, 'id' | 'isExpanded'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (projectId: string) => void;
@@ -49,6 +59,11 @@ interface TaskContextType {
   addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => void;
   updateTimeBlock: (timeBlock: TimeBlock) => void;
   deleteTimeBlock: (timeBlockId: string) => void;
+  startTimeTracking: (taskId: string, notes?: string) => void;
+  stopTimeTracking: () => void;
+  addTimeTracking: (timeTracking: Omit<TimeTracking, 'id'>) => void;
+  updateTimeTracking: (timeTracking: TimeTracking) => void;
+  deleteTimeTracking: (timeTrackingId: string) => void;
   selectedView: 'projects' | 'list' | 'calendar';
   setSelectedView: (view: 'projects' | 'list' | 'calendar') => void;
   selectedDate: Date;
@@ -125,6 +140,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [timeTrackings, setTimeTrackings] = useState<TimeTracking[]>([]);
+  const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
   const [selectedView, setSelectedView] = useState<'projects' | 'list' | 'calendar'>('projects');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
@@ -134,6 +151,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const storedProjects = localStorage.getItem('quire-projects');
     const storedTasks = localStorage.getItem('quire-tasks');
     const storedTimeBlocks = localStorage.getItem('quire-timeblocks');
+    const storedTimeTrackings = localStorage.getItem('quire-timetrackings');
+    const storedActiveTimeTracking = localStorage.getItem('quire-active-timetracking');
     
     if (storedProjects) setProjects(JSON.parse(storedProjects));
     if (storedTasks) {
@@ -159,6 +178,24 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setTimeBlocks(parsedTimeBlocks);
     }
+    if (storedTimeTrackings) {
+      const parsedTimeTrackings = JSON.parse(storedTimeTrackings);
+      parsedTimeTrackings.forEach((tracking: any) => {
+        if (tracking.startTime) tracking.startTime = new Date(tracking.startTime);
+        if (tracking.endTime) tracking.endTime = new Date(tracking.endTime);
+      });
+      setTimeTrackings(parsedTimeTrackings);
+    }
+    if (storedActiveTimeTracking) {
+      const parsedActiveTracking = JSON.parse(storedActiveTimeTracking);
+      if (parsedActiveTracking) {
+        if (parsedActiveTracking.startTime) 
+          parsedActiveTracking.startTime = new Date(parsedActiveTracking.startTime);
+        if (parsedActiveTracking.endTime) 
+          parsedActiveTracking.endTime = new Date(parsedActiveTracking.endTime);
+        setActiveTimeTracking(parsedActiveTracking);
+      }
+    }
   }, []);
 
   // Save to localStorage when data changes
@@ -166,7 +203,33 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('quire-projects', JSON.stringify(projects));
     localStorage.setItem('quire-tasks', JSON.stringify(tasks));
     localStorage.setItem('quire-timeblocks', JSON.stringify(timeBlocks));
-  }, [projects, tasks, timeBlocks]);
+    localStorage.setItem('quire-timetrackings', JSON.stringify(timeTrackings));
+    localStorage.setItem('quire-active-timetracking', JSON.stringify(activeTimeTracking));
+  }, [projects, tasks, timeBlocks, timeTrackings, activeTimeTracking]);
+
+  // Timer effect to update active time tracking
+  useEffect(() => {
+    if (!activeTimeTracking) return;
+    
+    const intervalId = setInterval(() => {
+      // Update the active time tracking's duration
+      const now = new Date();
+      const startTime = new Date(activeTimeTracking.startTime);
+      const durationInMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
+      
+      setActiveTimeTracking(prev => {
+        if (prev) {
+          return {
+            ...prev,
+            duration: durationInMinutes
+          };
+        }
+        return null;
+      });
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(intervalId);
+  }, [activeTimeTracking]);
 
   // Project functions
   const addProject = (project: Omit<Project, 'id' | 'isExpanded'>) => {
@@ -348,10 +411,118 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTimeBlocks(timeBlocks.filter(tb => tb.id !== timeBlockId));
   };
 
+  // TimeTracking functions
+  const startTimeTracking = (taskId: string, notes?: string) => {
+    // Check if there's already an active tracking
+    if (activeTimeTracking) {
+      // Stop the current tracking before starting a new one
+      stopTimeTracking();
+    }
+    
+    // Create a new time tracking
+    const newTracking: TimeTracking = {
+      id: generateId(),
+      taskId,
+      startTime: new Date(),
+      duration: 0,
+      notes
+    };
+    
+    setActiveTimeTracking(newTracking);
+  };
+
+  const stopTimeTracking = () => {
+    if (!activeTimeTracking) return;
+    
+    // Calculate the final duration
+    const endTime = new Date();
+    const startTime = new Date(activeTimeTracking.startTime);
+    const durationInMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
+    
+    const completedTracking: TimeTracking = {
+      ...activeTimeTracking,
+      endTime,
+      duration: durationInMinutes
+    };
+    
+    // Add the completed tracking to the list
+    setTimeTrackings([...timeTrackings, completedTracking]);
+    
+    // Update the task's total tracked time
+    updateTaskTimeTracked(completedTracking.taskId, durationInMinutes);
+    
+    // Clear the active tracking
+    setActiveTimeTracking(null);
+  };
+
+  const updateTaskTimeTracked = (taskId: string, additionalMinutes: number) => {
+    const task = findTaskById(taskId, getRootTasks());
+    if (!task) return;
+    
+    if (task.parentId) {
+      // Update a child task
+      const updatedTasks = updateTaskInHierarchy(
+        taskId,
+        (taskToUpdate) => ({
+          ...taskToUpdate,
+          timeTracked: (taskToUpdate.timeTracked || 0) + additionalMinutes
+        }),
+        getRootTasks()
+      );
+      setTasks(updatedTasks);
+    } else {
+      // Update a root task
+      setTasks(tasks.map(t => 
+        t.id === taskId ? { ...t, timeTracked: (t.timeTracked || 0) + additionalMinutes } : t
+      ));
+    }
+  };
+
+  const addTimeTracking = (timeTracking: Omit<TimeTracking, 'id'>) => {
+    const newTimeTracking = { ...timeTracking, id: generateId() };
+    setTimeTrackings([...timeTrackings, newTimeTracking]);
+    
+    // Update the task's total tracked time if the tracking has a duration
+    if (timeTracking.duration > 0) {
+      updateTaskTimeTracked(timeTracking.taskId, timeTracking.duration);
+    }
+  };
+
+  const updateTimeTracking = (timeTracking: TimeTracking) => {
+    // Get the original time tracking
+    const originalTracking = timeTrackings.find(t => t.id === timeTracking.id);
+    
+    if (originalTracking) {
+      // If the duration changed, update the task's total tracked time
+      const durationDifference = timeTracking.duration - originalTracking.duration;
+      if (durationDifference !== 0) {
+        updateTaskTimeTracked(timeTracking.taskId, durationDifference);
+      }
+    }
+    
+    setTimeTrackings(timeTrackings.map(t => 
+      t.id === timeTracking.id ? timeTracking : t
+    ));
+  };
+
+  const deleteTimeTracking = (timeTrackingId: string) => {
+    const trackingToDelete = timeTrackings.find(t => t.id === timeTrackingId);
+    
+    if (trackingToDelete) {
+      // Update the task's total tracked time by subtracting the deleted tracking's duration
+      updateTaskTimeTracked(trackingToDelete.taskId, -trackingToDelete.duration);
+      
+      // Remove the tracking
+      setTimeTrackings(timeTrackings.filter(t => t.id !== timeTrackingId));
+    }
+  };
+
   const value = {
     projects,
     tasks,
     timeBlocks,
+    timeTrackings,
+    activeTimeTracking,
     addProject,
     updateProject,
     deleteProject,
@@ -363,6 +534,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addTimeBlock,
     updateTimeBlock,
     deleteTimeBlock,
+    startTimeTracking,
+    stopTimeTracking,
+    addTimeTracking,
+    updateTimeTracking,
+    deleteTimeTracking,
     selectedView,
     setSelectedView,
     selectedDate,

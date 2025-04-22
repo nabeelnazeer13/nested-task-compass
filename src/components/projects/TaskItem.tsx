@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext, Task, Priority } from '@/context/TaskContext';
 import { 
   ChevronDown, 
@@ -8,7 +8,10 @@ import {
   Calendar, 
   Plus,
   Clock,
-  FileText
+  FileText,
+  Play,
+  Square,
+  Timer
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -22,6 +25,9 @@ import {
 import AddTaskDialog from './AddTaskDialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import TimeTrackingDialog from '@/components/time-tracking/TimeTrackingDialog';
+import { formatMinutes } from '@/lib/time-utils';
+import { toast } from "sonner";
 
 interface TaskItemProps {
   task: Task;
@@ -44,10 +50,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const { 
     toggleTaskExpanded, 
     deleteTask, 
-    updateTask 
+    updateTask,
+    activeTimeTracking,
+    startTimeTracking,
+    stopTimeTracking
   } = useTaskContext();
   
-  const [isAddingSubtask, setIsAddingSubtask] = React.useState(false);
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+  const [showTimeTrackingDialog, setShowTimeTrackingDialog] = useState(false);
 
   const handleUpdatePriority = (priority: Priority) => {
     updateTask({
@@ -56,10 +66,25 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
     });
   };
 
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  const isTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
+
+  const handleTimeTrackingAction = () => {
+    if (isTracking) {
+      stopTimeTracking();
+      toast.success(`Stopped tracking time for "${task.title}"`);
+    } else {
+      if (activeTimeTracking) {
+        // Another task is being tracked
+        toast.warning(`Stopped tracking "${activeTimeTracking.taskId}" and started tracking "${task.title}"`);
+      } else {
+        toast.success(`Started tracking time for "${task.title}"`);
+      }
+      startTimeTracking(task.id);
+    }
+  };
+
+  const handleOpenTimeTracking = () => {
+    setShowTimeTrackingDialog(true);
   };
 
   return (
@@ -98,14 +123,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
             {task.estimatedTime && (
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
                 <Clock size={12} />
-                Est: {formatTime(task.estimatedTime)}
+                Est: {formatMinutes(task.estimatedTime)}
               </Badge>
             )}
             
             {task.timeTracked > 0 && (
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
                 <Clock size={12} />
-                Tracked: {formatTime(task.timeTracked)}
+                Tracked: {formatMinutes(task.timeTracked)}
               </Badge>
             )}
             
@@ -113,6 +138,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
                 <FileText size={12} />
                 Notes
+              </Badge>
+            )}
+            
+            {isTracking && (
+              <Badge className="ml-2 text-xs bg-green-100 text-green-800 animate-pulse">
+                Tracking...
               </Badge>
             )}
           </div>
@@ -125,6 +156,24 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
         </div>
         
         <div className="flex-none flex items-center">
+          <Button 
+            variant={isTracking ? "destructive" : "outline"} 
+            size="sm" 
+            className="h-8 w-8 p-0 mr-1"
+            onClick={handleTimeTrackingAction}
+          >
+            {isTracking ? <Square size={16} /> : <Play size={16} />}
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0 mr-1"
+            onClick={handleOpenTimeTracking}
+          >
+            <Timer size={16} />
+          </Button>
+        
           <Button 
             variant="ghost" 
             size="sm" 
@@ -183,6 +232,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
         onOpenChange={setIsAddingSubtask} 
         projectId={task.projectId}
         parentTaskId={task.id}
+      />
+      
+      <TimeTrackingDialog
+        open={showTimeTrackingDialog}
+        onOpenChange={setShowTimeTrackingDialog}
+        task={task}
       />
     </div>
   );
