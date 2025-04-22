@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTaskContext, Task } from '@/context/TaskContext';
@@ -72,9 +71,14 @@ const ListView: React.FC = () => {
           comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
           break;
         }
-        case 'status': {
-          // Remove status-based sorting
-          comparison = 0;
+        case 'estimatedTime': {
+          const aTime = a.estimatedTime || 0;
+          const bTime = b.estimatedTime || 0;
+          comparison = aTime - bTime;
+          break;
+        }
+        case 'timeTracked': {
+          comparison = a.timeTracked - b.timeTracked;
           break;
         }
       }

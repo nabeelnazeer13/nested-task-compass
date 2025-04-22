@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useTaskContext, Priority, Status } from '@/context/TaskContext';
+import { useTaskContext, Priority } from '@/context/TaskContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [priority, setPriority] = useState<Priority>('medium');
+  const [notes, setNotes] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState<number | undefined>(undefined);
 
   const handleAddTask = () => {
     if (title.trim()) {
@@ -40,9 +42,10 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
         description,
         dueDate,
         priority,
-        status: 'todo',
         projectId,
-        parentId: parentTaskId
+        parentId: parentTaskId,
+        notes,
+        estimatedTime
       });
       
       // Clear form
@@ -50,6 +53,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       setDescription('');
       setDueDate(undefined);
       setPriority('medium');
+      setNotes('');
+      setEstimatedTime(undefined);
       
       // Close dialog
       onOpenChange(false);
@@ -136,6 +141,28 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                 </Label>
               </div>
             </RadioGroup>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="task-notes">Notes (optional)</Label>
+            <Textarea 
+              id="task-notes" 
+              value={notes} 
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Enter task notes"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="task-estimatedTime">Estimated Time (minutes, optional)</Label>
+            <Input 
+              id="task-estimatedTime" 
+              type="number"
+              min="0"
+              value={estimatedTime === undefined ? '' : estimatedTime}
+              onChange={(e) => setEstimatedTime(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+              placeholder="Estimated time in minutes"
+            />
           </div>
         </div>
         
