@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Task, useTaskContext, Priority, Status } from '@/context/TaskContext';
 import { 
@@ -19,7 +18,7 @@ import {
   MoveHorizontal,
   ArrowDown,
   ArrowUp,
-  Columns as LucideColumns  // Change import to avoid naming conflict
+  Columns as LucideColumns 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -39,14 +38,20 @@ interface Column {
 
 interface TableViewModeProps {
   tasks: Task[];
+  initialSortField: SortField;
+  initialSortDirection: 'asc' | 'desc';
+  onSortChange: (field: SortField, direction: 'asc' | 'desc') => void;
 }
 
-const TableViewMode: React.FC<TableViewModeProps> = ({ tasks }) => {
+const TableViewMode: React.FC<TableViewModeProps> = ({ 
+  tasks, 
+  initialSortField,
+  initialSortDirection,
+  onSortChange
+}) => {
   const { updateTask } = useTaskContext();
-  
-  type SortField = 'title' | 'priority' | 'status' | 'dueDate';
-  const [sortField, setSortField] = useState<SortField>('title');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<SortField>(initialSortField);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(initialSortDirection);
   
   const handleToggleStatus = (task: Task) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
@@ -57,50 +62,22 @@ const TableViewMode: React.FC<TableViewModeProps> = ({ tasks }) => {
   };
 
   const handleSort = (field: SortField) => {
+    let newDirection: 'asc' | 'desc';
     if (sortField === field) {
       // Toggle direction
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       // New field, default to ascending
-      setSortField(field);
-      setSortDirection('asc');
+      newDirection = 'asc';
     }
+    
+    setSortField(field);
+    setSortDirection(newDirection);
+    onSortChange(field, newDirection);
   };
 
-  const sortedTasks = [...tasks].sort((a, b) => {
-    let comparison = 0;
-    
-    switch (sortField) {
-      case 'title':
-        comparison = a.title.localeCompare(b.title);
-        break;
-      case 'priority': {
-        const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
-        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
-        break;
-      }
-      case 'status': {
-        const statusOrder: Record<Status, number> = { 'todo': 0, 'in-progress': 1, 'done': 2 };
-        comparison = statusOrder[a.status] - statusOrder[b.status];
-        break;
-      }
-      case 'dueDate':
-        if (!a.dueDate && !b.dueDate) {
-          comparison = 0;
-        } else if (!a.dueDate) {
-          comparison = 1;
-        } else if (!b.dueDate) {
-          comparison = -1;
-        } else {
-          comparison = a.dueDate.getTime() - b.dueDate.getTime();
-        }
-        break;
-    }
-    
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
+  const sortedTasks = [...tasks];
 
-  // Define columns with visibility state
   const [columns, setColumns] = useState<Column[]>([
     {
       id: 'status',
