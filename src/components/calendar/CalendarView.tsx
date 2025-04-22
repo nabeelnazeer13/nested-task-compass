@@ -13,16 +13,14 @@ type CalendarViewType = 'day' | 'week' | 'month';
 
 const CalendarView: React.FC = () => {
   const { selectedDate, setSelectedDate, tasks } = useTaskContext();
-  const { activeFilters, excludeCompleted } = useFilterContext();
+  const { activeFilters } = useFilterContext();
   const [view, setView] = useState<CalendarViewType>('week');
   const [showTaskList, setShowTaskList] = useState(true);
+  const [showMiniCalendar, setShowMiniCalendar] = useState(false);
   
   // Get filtered tasks based on active filters
   const getFilteredTasks = () => {
     let filteredTasks = [...tasks];
-    
-    // We're no longer filtering by completed status since it's been removed
-    
     activeFilters.forEach(filter => {
       switch (filter.type) {
         case FilterType.PRIORITY:
@@ -31,25 +29,21 @@ const CalendarView: React.FC = () => {
         case FilterType.PROJECT:
           filteredTasks = filteredTasks.filter(task => task.projectId === filter.value);
           break;
-        // Remove FilterType.STATUS case since status has been removed
       }
     });
-    
     return filteredTasks;
   };
 
-  // Helper function to get all tasks with due dates
   const tasksWithDueDate = getFilteredTasks().filter(task => task.dueDate);
   const tasksWithoutDueDate = getFilteredTasks().filter(task => !task.dueDate);
   
-  // Helper function to get all tasks due on a specific date
   const getTasksForDate = (date: Date) => {
     return tasksWithDueDate.filter(task => 
       task.dueDate && isSameDay(task.dueDate, date)
     );
   };
   
-  // Calculate the days to display based on view (day, week, or month)
+  // Days to show in view
   const getDaysToDisplay = () => {
     if (view === 'day') {
       return [selectedDate];
@@ -59,8 +53,7 @@ const CalendarView: React.FC = () => {
         end: endOfWeek(selectedDate, { weekStartsOn: 1 })
       });
     } else {
-      // Month view - simplified implementation for now
-      // In a real app, would calculate all days in the month
+      // Month, start from week before month and show 28 days
       const startDay = startOfWeek(selectedDate, { weekStartsOn: 1 });
       return Array.from({ length: 28 }, (_, i) => addDays(startDay, i));
     }
@@ -75,7 +68,7 @@ const CalendarView: React.FC = () => {
     } else if (view === 'week') {
       setSelectedDate(addDays(selectedDate, -7));
     } else {
-      setSelectedDate(addDays(selectedDate, -28)); // Simple month navigation
+      setSelectedDate(addDays(selectedDate, -28));
     }
   };
   
@@ -85,7 +78,7 @@ const CalendarView: React.FC = () => {
     } else if (view === 'week') {
       setSelectedDate(addDays(selectedDate, 7));
     } else {
-      setSelectedDate(addDays(selectedDate, 28)); // Simple month navigation
+      setSelectedDate(addDays(selectedDate, 28));
     }
   };
   
@@ -95,20 +88,23 @@ const CalendarView: React.FC = () => {
 
   // Drag and drop handlers
   const handleDragStart = (task: Task) => {
-    // Setup drag data
-    console.log(`Started dragging task: ${task.id}`);
+    // For DnD: set task id in event data
+    // We'll use taskId text/plain for maximum compatibility
+    window.___draggingTaskId = task.id;
   };
 
   // Handle dropping a task on the calendar
   const handleTaskDrop = (task: Task, date: Date, timeSlot?: string) => {
+    // Keep for future extension
     console.log(`Dropped task ${task.id} on ${format(date, 'yyyy-MM-dd')}${timeSlot ? ` at ${timeSlot}` : ''}`);
   };
 
   return (
     <div className="space-y-6">
+      {/* Toolbar with week navigation, filters, mini-calendar popover */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Calendar</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -143,40 +139,56 @@ const CalendarView: React.FC = () => {
               Month
             </Button>
           </div>
+          {/* Navigation moved up here */}
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" onClick={navigatePrevious}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={navigateNext}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={navigateToday}>
+              Today
+            </Button>
+            <span className="ml-2 text-lg font-medium">
+              {view === 'day' 
+                ? format(selectedDate, 'MMMM d, yyyy') 
+                : `${format(daysToDisplay[0], 'MMM d')} - ${format(daysToDisplay[daysToDisplay.length - 1], 'MMM d, yyyy')}`
+              }
+            </span>
+          </div>
+          {/* Inline date picker popover */}
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setShowMiniCalendar((v) => !v)}
+              className="ml-1"
+              aria-label="Show calendar"
+            >
+              <span role="img" aria-label="calendar">📅</span>
+            </Button>
+            {showMiniCalendar && (
+              <div className="absolute right-0 z-20 bg-background border rounded-md shadow-lg mt-2 pointer-events-auto">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) setSelectedDate(date);
+                    setShowMiniCalendar(false);
+                  }}
+                  className="rounded-md border p-2 pointer-events-auto"
+                />
+              </div>
+            )}
+          </div>
           <FilterButton />
         </div>
       </div>
       
       <FilterPills />
       
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={navigatePrevious}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={navigateNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={navigateToday}>
-            Today
-          </Button>
-          <h3 className="text-lg font-medium ml-2">
-            {view === 'day' 
-              ? format(selectedDate, 'MMMM d, yyyy') 
-              : `${format(daysToDisplay[0], 'MMM d')} - ${format(daysToDisplay[daysToDisplay.length - 1], 'MMM d, yyyy')}`
-            }
-          </h3>
-        </div>
-        
-        <div>
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => date && setSelectedDate(date)}
-            className="rounded-md border"
-          />
-        </div>
-      </div>
+      {/* Removed the separate navigation + calendar row */}
       
       <div className="flex gap-4">
         {/* Task list sidebar */}
@@ -247,13 +259,14 @@ const CalendarView: React.FC = () => {
               </div>
             ))}
             
-            {/* Calendar days */}
+            {/* Calendar day grid with hour slots */}
             {daysToDisplay.map((day) => (
               <CalendarDay 
                 key={day.toString()} 
                 date={day} 
                 tasks={getTasksForDate(day)} 
-                onTaskDrop={(task) => handleTaskDrop(task, day)}
+                onTaskDrop={(task, timeSlot) => handleTaskDrop(task, day, timeSlot)}
+                oneHourSlots // signal to CalendarDay to use hour slots
               />
             ))}
           </div>
