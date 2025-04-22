@@ -18,7 +18,6 @@ const CalendarView: React.FC = () => {
   const [showTaskList, setShowTaskList] = useState(true);
   const [showMiniCalendar, setShowMiniCalendar] = useState(false);
   
-  // Get filtered tasks based on active filters
   const getFilteredTasks = () => {
     let filteredTasks = [...tasks];
     activeFilters.forEach(filter => {
@@ -43,7 +42,6 @@ const CalendarView: React.FC = () => {
     );
   };
   
-  // Days to show in view
   const getDaysToDisplay = () => {
     if (view === 'day') {
       return [selectedDate];
@@ -53,7 +51,6 @@ const CalendarView: React.FC = () => {
         end: endOfWeek(selectedDate, { weekStartsOn: 1 })
       });
     } else {
-      // Month, start from week before month and show 28 days
       const startDay = startOfWeek(selectedDate, { weekStartsOn: 1 });
       return Array.from({ length: 28 }, (_, i) => addDays(startDay, i));
     }
@@ -61,7 +58,6 @@ const CalendarView: React.FC = () => {
 
   const daysToDisplay = getDaysToDisplay();
   
-  // Navigation functions
   const navigatePrevious = () => {
     if (view === 'day') {
       setSelectedDate(addDays(selectedDate, -1));
@@ -86,22 +82,16 @@ const CalendarView: React.FC = () => {
     setSelectedDate(new Date());
   };
 
-  // Drag and drop handlers
   const handleDragStart = (task: Task) => {
-    // For DnD: set task id in event data
-    // We'll use taskId text/plain for maximum compatibility
     window.___draggingTaskId = task.id;
   };
 
-  // Handle dropping a task on the calendar
   const handleTaskDrop = (task: Task, date: Date, timeSlot?: string) => {
-    // Keep for future extension
     console.log(`Dropped task ${task.id} on ${format(date, 'yyyy-MM-dd')}${timeSlot ? ` at ${timeSlot}` : ''}`);
   };
 
   return (
     <div className="space-y-6">
-      {/* Toolbar with week navigation, filters, mini-calendar popover */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Calendar</h2>
         <div className="flex items-center gap-2 flex-wrap">
@@ -139,7 +129,6 @@ const CalendarView: React.FC = () => {
               Month
             </Button>
           </div>
-          {/* Navigation moved up here */}
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" onClick={navigatePrevious}>
               <ChevronLeft className="h-4 w-4" />
@@ -157,7 +146,6 @@ const CalendarView: React.FC = () => {
               }
             </span>
           </div>
-          {/* Inline date picker popover */}
           <div className="relative">
             <Button 
               variant="outline" 
@@ -188,10 +176,7 @@ const CalendarView: React.FC = () => {
       
       <FilterPills />
       
-      {/* Removed the separate navigation + calendar row */}
-      
       <div className="flex gap-4">
-        {/* Task list sidebar */}
         {showTaskList && (
           <div className="w-72 border rounded-md h-fit">
             <div className="bg-muted/50 p-2 border-b font-medium">
@@ -244,12 +229,10 @@ const CalendarView: React.FC = () => {
           </div>
         )}
         
-        {/* Calendar grid */}
         <div className="flex-1 border rounded-md overflow-hidden">
           <div className="grid gap-1" style={{ 
             gridTemplateColumns: `repeat(${daysToDisplay.length}, 1fr)` 
           }}>
-            {/* Day headers */}
             {daysToDisplay.map((day) => (
               <div key={day.toString()} className="text-center p-2 font-medium">
                 <div>{format(day, 'EEE')}</div>
@@ -259,14 +242,13 @@ const CalendarView: React.FC = () => {
               </div>
             ))}
             
-            {/* Calendar day grid with hour slots */}
             {daysToDisplay.map((day) => (
               <CalendarDay 
                 key={day.toString()} 
                 date={day} 
                 tasks={getTasksForDate(day)} 
                 onTaskDrop={(task, timeSlot) => handleTaskDrop(task, day, timeSlot)}
-                oneHourSlots // signal to CalendarDay to use hour slots
+                oneHourSlots
               />
             ))}
           </div>
