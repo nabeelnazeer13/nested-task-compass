@@ -15,6 +15,12 @@ const ProjectView: React.FC = () => {
   const [isAddTaskOpen, setIsAddTaskOpen] = React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
 
+  // Add console log for debugging
+  React.useEffect(() => {
+    console.log('ProjectView rendering with projects:', projects);
+    console.log('ProjectView rendering with tasks:', tasks);
+  }, [projects, tasks]);
+
   const handleAddTask = (projectId: string) => {
     setSelectedProjectId(projectId);
     setIsAddTaskOpen(true);

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Task, TimeBlock, TimeTracking, TaskContextType, ReactNode, Priority } from './TaskTypes';
 import { sampleProjects, sampleTasks, sampleTimeBlocks } from './TaskMockData';
@@ -7,8 +6,6 @@ import { useTaskActions } from './TaskTaskActions';
 import { useTimeBlockActions } from './TaskTimeBlockActions';
 import { useTimeTrackingActions } from './TaskTimeTrackingActions';
 import { findTaskById, getRootTasks, updateTaskInHierarchy } from './TaskHelpers';
-
-// Compose all functionality as before, keeping async/persistence for now as in-memory with mock data
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
@@ -21,9 +18,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [selectedView, setSelectedView] = useState<'projects' | 'list' | 'calendar'>('projects');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  // Local Storage persistence
   useEffect(() => {
-    // Load data from localStorage on init
+    console.log('TaskContext initialized with:');
+    console.log('Projects:', projects);
+    console.log('Tasks:', tasks);
+    console.log('TimeBlocks:', timeBlocks);
+  }, []);
+
+  useEffect(() => {
     const storedProjects = localStorage.getItem('quire-projects');
     const storedTasks = localStorage.getItem('quire-tasks');
     const storedTimeBlocks = localStorage.getItem('quire-timeblocks');
@@ -33,10 +35,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (storedProjects) setProjects(JSON.parse(storedProjects));
     if (storedTasks) {
       const parsedTasks = JSON.parse(storedTasks);
-      // Convert date strings back to Date objects
       parsedTasks.forEach((task: any) => {
         if (task.dueDate) task.dueDate = new Date(task.dueDate);
-        // Migrate existing tasks to new structure
         if (task.status !== undefined) {
           delete task.status;
         }
@@ -48,7 +48,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     if (storedTimeBlocks) {
       const parsedTimeBlocks = JSON.parse(storedTimeBlocks);
-      // Convert date strings back to Date objects
       parsedTimeBlocks.forEach((block: any) => {
         if (block.date) block.date = new Date(block.date);
       });
@@ -74,7 +73,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  // Save to localStorage when data changes
   useEffect(() => {
     localStorage.setItem('quire-projects', JSON.stringify(projects));
     localStorage.setItem('quire-tasks', JSON.stringify(tasks));
@@ -83,18 +81,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('quire-active-timetracking', JSON.stringify(activeTimeTracking));
   }, [projects, tasks, timeBlocks, timeTrackings, activeTimeTracking]);
 
-  // Delegate to actions hooks
   const projectActions = useProjectActions(projects, setProjects);
   const taskActions = useTaskActions(tasks, setTasks, () => tasks);
   const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
   const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
 
-  // Timer effect to update active time tracking
   useEffect(() => {
     if (!activeTimeTracking) return;
     
     const intervalId = setInterval(() => {
-      // Update the active time tracking's duration
       const now = new Date();
       const startTime = new Date(activeTimeTracking.startTime);
       const durationInMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
@@ -108,7 +103,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         return null;
       });
-    }, 60000); // Update every minute
+    }, 60000);
     
     return () => clearInterval(intervalId);
   }, [activeTimeTracking]);
@@ -118,7 +113,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!task) return;
     
     if (task.parentId) {
-      // Update a child task
       const updatedTasks = updateTaskInHierarchy(
         taskId,
         (taskToUpdate) => ({
@@ -129,7 +123,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
       setTasks(updatedTasks);
     } else {
-      // Update a root task
       setTasks(tasks.map(t => 
         t.id === taskId ? { ...t, timeTracked: (t.timeTracked || 0) + additionalMinutes } : t
       ));
@@ -137,13 +130,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const startTimeTracking = (taskId: string, notes?: string) => {
-    // Check if there's already an active tracking
     if (activeTimeTracking) {
-      // Stop the current tracking before starting a new one
       stopTimeTracking();
     }
     
-    // Create a new time tracking
     const newTracking: TimeTracking = {
       id: Math.random().toString(36).substring(2, 11),
       taskId,
@@ -158,7 +148,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const stopTimeTracking = () => {
     if (!activeTimeTracking) return;
     
-    // Calculate the final duration
     const endTime = new Date();
     const startTime = new Date(activeTimeTracking.startTime);
     const durationInMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
@@ -169,13 +158,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       duration: durationInMinutes
     };
     
-    // Add the completed tracking to the list
     setTimeTrackings([...timeTrackings, completedTracking]);
     
-    // Update the task's total tracked time
     updateTaskTimeTracked(completedTracking.taskId, durationInMinutes);
     
-    // Clear the active tracking
     setActiveTimeTracking(null);
   };
 
@@ -208,5 +194,4 @@ export const useTaskContext = () => {
   return context;
 };
 
-// Re-export all the types from TaskTypes to maintain backward compatibility
 export type { Task, Project, TimeBlock, TimeTracking, Priority, TaskContextType };
