@@ -18,7 +18,8 @@ import {
   Clock, 
   MoveHorizontal,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  Columns as LucideColumns  // Change import to avoid naming conflict
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -199,7 +200,7 @@ const TableViewMode: React.FC<TableViewModeProps> = ({ tasks }) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              <Columns className="h-4 w-4 mr-2" />
+              <LucideColumns className="h-4 w-4 mr-2" />
               Columns
             </Button>
           </DropdownMenuTrigger>
