@@ -86,7 +86,7 @@ const ListView: React.FC = () => {
       
       switch (groupBy) {
         case 'project':
-          const project = projects.find(p => p.projectId === task.projectId);
+          const project = projects.find(p => p.id === task.projectId);
           groupKey = project?.name || 'No Project';
           break;
         case 'date':

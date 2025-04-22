@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Task, useTaskContext, Priority, Status } from '@/context/TaskContext';
 import { 
@@ -35,6 +36,9 @@ interface Column {
   cell: (task: Task) => React.ReactNode;
   visible: boolean;
 }
+
+// Define the SortField type as a union of possible sort fields
+export type SortField = 'title' | 'dueDate' | 'priority' | 'status';
 
 interface TableViewModeProps {
   tasks: Task[];
