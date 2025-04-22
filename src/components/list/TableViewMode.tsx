@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Task, useTaskContext, Priority, Status } from '@/context/TaskContext';
+import { Task, useTaskContext } from '@/context/TaskContext';
 import { 
   Table, 
   TableHeader, 
@@ -12,14 +12,13 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Calendar, 
-  CheckCircle, 
-  Circle, 
-  Clock, 
-  MoveHorizontal,
+  Calendar,
+  CheckCircle,
+  Circle,
+  Clock,
   ArrowDown,
   ArrowUp,
-  Columns as LucideColumns 
+  LucideColumns,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -29,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
+import { GroupBy } from './ListToolbar';
 
 interface Column {
   id: string;
@@ -37,7 +37,7 @@ interface Column {
   visible: boolean;
 }
 
-// Define the SortField type as a union of possible sort fields
+// Define the SortField type to match the possible sort values
 export type SortField = 'title' | 'dueDate' | 'priority' | 'status';
 
 interface TableViewModeProps {
@@ -45,13 +45,17 @@ interface TableViewModeProps {
   initialSortField: SortField;
   initialSortDirection: 'asc' | 'desc';
   onSortChange: (field: SortField, direction: 'asc' | 'desc') => void;
+  groupBy: GroupBy;
+  groupedTasks: Record<string, Task[]>;
 }
 
 const TableViewMode: React.FC<TableViewModeProps> = ({ 
   tasks, 
   initialSortField,
   initialSortDirection,
-  onSortChange
+  onSortChange,
+  groupBy,
+  groupedTasks
 }) => {
   const { updateTask } = useTaskContext();
   const [sortField, setSortField] = useState<SortField>(initialSortField);
@@ -199,53 +203,62 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
         </DropdownMenu>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {visibleColumns.map(column => (
-              <TableHead key={column.id}>
-                <button 
-                  className="flex items-center gap-1 font-medium text-sm"
-                  onClick={() => {
-                    if (['title', 'priority', 'status', 'dueDate'].includes(column.id)) {
-                      handleSort(column.id as SortField);
-                    }
-                  }}
-                >
-                  {column.header}
-                  
-                  {sortField === column.id && (
-                    sortDirection === 'asc' ? (
-                      <ArrowUp className="h-3 w-3" />
-                    ) : (
-                      <ArrowDown className="h-3 w-3" />
-                    )
-                  )}
-                </button>
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedTasks.length > 0 ? (
-            sortedTasks.map(task => (
-              <TableRow key={task.id} className={task.status === 'done' ? 'bg-muted/30' : ''}>
-                {visibleColumns.map(column => (
-                  <TableCell key={`${task.id}-${column.id}`}>
-                    {column.cell(task)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={visibleColumns.length} className="h-24 text-center">
-                No tasks match your current filters
-              </TableCell>
-            </TableRow>
+      {Object.entries(groupedTasks).map(([group, groupTasks]) => (
+        <div key={group}>
+          {group !== 'All Tasks' && (
+            <div className="px-4 py-2 bg-muted/50 font-semibold text-muted-foreground">
+              {group}
+            </div>
           )}
-        </TableBody>
-      </Table>
+          <Table>
+            {group === Object.keys(groupedTasks)[0] && (
+              <TableHeader>
+                <TableRow>
+                  {visibleColumns.map(column => (
+                    <TableHead key={column.id}>
+                      <button 
+                        className="flex items-center gap-1 font-medium text-sm"
+                        onClick={() => {
+                          if (['title', 'dueDate', 'priority', 'status'].includes(column.id)) {
+                            handleSort(column.id as SortField);
+                          }
+                        }}
+                      >
+                        {column.header}
+                        {sortField === column.id && (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )
+                        )}
+                      </button>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+            )}
+            <TableBody>
+              {groupTasks.length > 0 ? (
+                groupTasks.map(task => (
+                  <TableRow key={task.id} className={task.status === 'done' ? 'bg-muted/30' : ''}>
+                    {visibleColumns.map(column => (
+                      <TableCell key={`${task.id}-${column.id}`}>
+                        {column.cell(task)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : null}
+            </TableBody>
+          </Table>
+        </div>
+      ))}
+      {tasks.length === 0 && (
+        <div className="p-8 text-center text-muted-foreground">
+          No tasks match your current filters
+        </div>
+      )}
     </div>
   );
 };

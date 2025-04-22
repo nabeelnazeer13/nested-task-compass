@@ -173,12 +173,14 @@ const ListView: React.FC = () => {
       ) : (
         <TableViewMode 
           tasks={filteredTasks} 
-          initialSortField={sortBy} 
+          initialSortField={sortBy === 'date' ? 'dueDate' : sortBy}
           initialSortDirection={sortDirection}
           onSortChange={(field, direction) => {
-            setSortBy(field as SortBy);
+            setSortBy(field === 'dueDate' ? 'date' : field);
             setSortDirection(direction);
           }}
+          groupBy={groupBy}
+          groupedTasks={groupedTasks}
         />
       )}
     </div>
