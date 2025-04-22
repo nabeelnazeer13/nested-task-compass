@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Task, useTaskContext } from '@/context/TaskContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CheckCircle, Circle, Clock } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 interface ListViewModeProps {
   tasks: Task[];
@@ -12,31 +14,29 @@ interface ListViewModeProps {
 
 const ListViewMode: React.FC<ListViewModeProps> = ({ tasks }) => {
   const { updateTask } = useTaskContext();
+  const [collapsedTasks, setCollapsedTasks] = useState<Record<string, boolean>>({});
 
-  const handleToggleStatus = (task: Task) => {
-    const newStatus = task.status === 'done' ? 'todo' : 'done';
-    updateTask({
-      ...task,
-      status: newStatus
-    });
+  const toggleTaskCollapsed = (taskId: string) => {
+    setCollapsedTasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
   };
 
   const renderTasksHierarchy = (tasks: Task[], level = 0) => {
     return tasks.map(task => (
       <React.Fragment key={task.id}>
         <div 
-          className={`flex items-center p-3 border-b gap-3 ${task.status === 'done' ? 'bg-muted/30' : ''}`}
+          className="flex items-center p-3 border-b gap-3"
           style={{ paddingLeft: `${level * 20 + 12}px` }}
         >
           <Checkbox 
-            checked={task.status === 'done'} 
-            onCheckedChange={() => handleToggleStatus(task)} 
             className="flex-none"
           />
           
           <div className="flex-grow min-w-0 flex flex-col">
             <div className="flex items-center gap-2">
-              <span className={`font-medium ${task.status === 'done' ? 'line-through text-muted-foreground' : ''}`}>
+              <span className="font-medium">
                 {task.title}
               </span>
               
@@ -55,19 +55,12 @@ const ListViewMode: React.FC<ListViewModeProps> = ({ tasks }) => {
                 {task.priority}
               </Badge>
               
-              <Badge className={`text-xs ${
-                task.status === 'done' ? 'bg-green-100 text-green-800' : 
-                task.status === 'in-progress' ? 'bg-purple-100 text-purple-800' : 
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {task.status === 'todo' ? (
-                  <><Circle size={12} className="mr-1" /> To Do</>
-                ) : task.status === 'in-progress' ? (
-                  <><Clock size={12} className="mr-1" /> In Progress</>
-                ) : (
-                  <><CheckCircle size={12} className="mr-1" /> Done</>
-                )}
-              </Badge>
+              {task.estimatedTime && (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Clock size={12} />
+                  {Math.floor(task.estimatedTime / 60)}h {task.estimatedTime % 60}m
+                </Badge>
+              )}
             </div>
             
             {task.description && (
@@ -75,11 +68,32 @@ const ListViewMode: React.FC<ListViewModeProps> = ({ tasks }) => {
                 {task.description}
               </p>
             )}
+            
+            {task.notes && (
+              <p className="text-xs text-muted-foreground mt-1 truncate italic">
+                Notes: {task.notes}
+              </p>
+            )}
           </div>
+          
+          {task.children && task.children.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => toggleTaskCollapsed(task.id)}
+            >
+              {collapsedTasks[task.id] ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </Button>
+          )}
         </div>
         
-        {task.children && task.children.length > 0 && task.isExpanded && (
-          renderTasksHierarchy(task.children, level + 1)
+        {task.children && task.children.length > 0 && (
+          <Collapsible open={!collapsedTasks[task.id]}>
+            <CollapsibleContent>
+              {renderTasksHierarchy(task.children, level + 1)}
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </React.Fragment>
     ));

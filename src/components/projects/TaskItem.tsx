@@ -1,15 +1,14 @@
 
 import React from 'react';
-import { useTaskContext, Task, Priority, Status } from '@/context/TaskContext';
+import { useTaskContext, Task, Priority } from '@/context/TaskContext';
 import { 
   ChevronDown, 
   ChevronUp, 
   MoreHorizontal, 
   Calendar, 
   Plus,
-  CheckCircle,
-  Circle,
-  Clock
+  Clock,
+  Notes
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -41,18 +40,6 @@ const priorityColors: Record<Priority, string> = {
   low: 'text-task-low'
 };
 
-const statusIcons: Record<Status, React.ReactNode> = {
-  'todo': <Circle size={16} />,
-  'in-progress': <Clock size={16} />,
-  'done': <CheckCircle size={16} />
-};
-
-const statusLabels: Record<Status, string> = {
-  'todo': 'To Do',
-  'in-progress': 'In Progress',
-  'done': 'Done'
-};
-
 const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const { 
     toggleTaskExpanded, 
@@ -62,22 +49,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   
   const [isAddingSubtask, setIsAddingSubtask] = React.useState(false);
 
-  const handleToggleStatus = () => {
-    // Toggle between todo and done
-    const newStatus: Status = task.status === 'done' ? 'todo' : 'done';
-    updateTask({
-      ...task,
-      status: newStatus
-    });
-  };
-
-  const handleUpdateStatus = (status: Status) => {
-    updateTask({
-      ...task,
-      status
-    });
-  };
-
   const handleUpdatePriority = (priority: Priority) => {
     updateTask({
       ...task,
@@ -85,14 +56,17 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
     });
   };
 
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   return (
     <div className="task-container">
-      <div className={`flex items-center p-2 task-item ${task.status === 'done' ? 'task-completed' : ''}`}>
+      <div className="flex items-center p-2 task-item">
         <div className="flex-none mr-2">
-          <Checkbox 
-            checked={task.status === 'done'} 
-            onCheckedChange={handleToggleStatus} 
-          />
+          <Checkbox />
         </div>
         
         {task.children.length > 0 && (
@@ -120,6 +94,27 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
             <Badge className={`ml-2 text-xs ${priorityColors[task.priority]}`}>
               {priorityLabels[task.priority]}
             </Badge>
+            
+            {task.estimatedTime && (
+              <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
+                <Clock size={12} />
+                Est: {formatTime(task.estimatedTime)}
+              </Badge>
+            )}
+            
+            {task.timeTracked > 0 && (
+              <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
+                <Clock size={12} />
+                Tracked: {formatTime(task.timeTracked)}
+              </Badge>
+            )}
+            
+            {task.notes && (
+              <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
+                <Notes size={12} />
+                Notes
+              </Badge>
+            )}
           </div>
           
           {task.description && (
@@ -146,16 +141,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleUpdateStatus('todo')}>
-                <Circle size={16} className="mr-2" /> To Do
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleUpdateStatus('in-progress')}>
-                <Clock size={16} className="mr-2" /> In Progress
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleUpdateStatus('done')}>
-                <CheckCircle size={16} className="mr-2" /> Done
-              </DropdownMenuItem>
-              
               <DropdownMenuSeparator />
               
               <DropdownMenuItem onClick={() => handleUpdatePriority('low')}>

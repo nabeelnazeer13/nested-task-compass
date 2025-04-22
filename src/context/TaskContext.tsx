@@ -1,8 +1,8 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Define our types
 export type Priority = 'low' | 'medium' | 'high';
-export type Status = 'todo' | 'in-progress' | 'done';
 
 export interface Task {
   id: string;
@@ -10,11 +10,13 @@ export interface Task {
   description?: string;
   dueDate?: Date;
   priority: Priority;
-  status: Status;
   parentId?: string;
   projectId: string;
   children: Task[];
   isExpanded?: boolean;
+  notes?: string;
+  estimatedTime?: number; // in minutes
+  timeTracked: number; // in minutes
 }
 
 export interface Project {
@@ -40,7 +42,7 @@ interface TaskContextType {
   updateProject: (project: Project) => void;
   deleteProject: (projectId: string) => void;
   toggleProjectExpanded: (projectId: string) => void;
-  addTask: (task: Omit<Task, 'id' | 'children' | 'isExpanded'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => void;
   updateTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
   toggleTaskExpanded: (taskId: string) => void;
@@ -70,25 +72,27 @@ const sampleTasks: Task[] = [
     title: 'Shopping list',
     description: 'Buy groceries for the week',
     priority: 'medium',
-    status: 'todo',
     projectId: 'project-1',
+    notes: 'Remember to get fresh produce',
+    estimatedTime: 60,
+    timeTracked: 0,
     children: [
       {
         id: 'task-1-1',
         title: 'Vegetables',
         priority: 'medium',
-        status: 'todo',
         projectId: 'project-1',
         parentId: 'task-1',
+        timeTracked: 0,
         children: [],
       },
       {
         id: 'task-1-2',
         title: 'Fruits',
         priority: 'low',
-        status: 'todo',
         projectId: 'project-1',
         parentId: 'task-1',
+        timeTracked: 0,
         children: [],
       }
     ],
@@ -99,18 +103,20 @@ const sampleTasks: Task[] = [
     title: 'Complete project proposal',
     description: 'Finish the proposal for the new client',
     priority: 'high',
-    status: 'in-progress',
     projectId: 'project-2',
     dueDate: new Date(2025, 3, 25),
+    notes: 'Include budget estimates',
+    estimatedTime: 180,
+    timeTracked: 45,
     children: [],
   },
   {
     id: 'task-3',
     title: 'Schedule team meeting',
     priority: 'low',
-    status: 'todo',
     projectId: 'project-2',
     dueDate: new Date(2025, 3, 23),
+    timeTracked: 0,
     children: [],
   }
 ];
@@ -135,6 +141,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Convert date strings back to Date objects
       parsedTasks.forEach((task: any) => {
         if (task.dueDate) task.dueDate = new Date(task.dueDate);
+        // Migrate existing tasks to new structure
+        if (task.status !== undefined) {
+          delete task.status;
+        }
+        if (task.timeTracked === undefined) {
+          task.timeTracked = 0;
+        }
       });
       setTasks(parsedTasks);
     }
@@ -231,12 +244,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Task functions
-  const addTask = (task: Omit<Task, 'id' | 'children' | 'isExpanded'>) => {
+  const addTask = (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => {
     const newTask: Task = {
       ...task,
       id: generateId(),
       children: [],
-      isExpanded: true
+      isExpanded: true,
+      timeTracked: 0
     };
 
     if (task.parentId) {

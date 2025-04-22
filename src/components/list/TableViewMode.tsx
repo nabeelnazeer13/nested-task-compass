@@ -13,12 +13,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar,
-  CheckCircle,
-  Circle,
-  Clock,
   ArrowDown,
   ArrowUp,
   LucideColumns,
+  ChevronDown,
+  ChevronUp,
+  Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { GroupBy } from './ListToolbar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Column {
   id: string;
@@ -38,7 +39,7 @@ interface Column {
 }
 
 // Define the SortField type to match the possible sort values
-export type SortField = 'title' | 'dueDate' | 'priority' | 'status';
+export type SortField = 'title' | 'dueDate' | 'priority' | 'estimatedTime' | 'timeTracked';
 
 interface TableViewModeProps {
   tasks: Task[];
@@ -47,6 +48,8 @@ interface TableViewModeProps {
   onSortChange: (field: SortField, direction: 'asc' | 'desc') => void;
   groupBy: GroupBy;
   groupedTasks: Record<string, Task[]>;
+  collapsedGroups: Record<string, boolean>;
+  onToggleGroup: (groupName: string) => void;
 }
 
 const TableViewMode: React.FC<TableViewModeProps> = ({ 
@@ -55,18 +58,20 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
   initialSortDirection,
   onSortChange,
   groupBy,
-  groupedTasks
+  groupedTasks,
+  collapsedGroups,
+  onToggleGroup
 }) => {
   const { updateTask } = useTaskContext();
   const [sortField, setSortField] = useState<SortField>(initialSortField);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(initialSortDirection);
+  const [collapsedTasks, setCollapsedTasks] = useState<Record<string, boolean>>({});
   
-  const handleToggleStatus = (task: Task) => {
-    const newStatus = task.status === 'done' ? 'todo' : 'done';
-    updateTask({
-      ...task,
-      status: newStatus
-    });
+  const toggleTaskCollapsed = (taskId: string) => {
+    setCollapsedTasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
   };
 
   const handleSort = (field: SortField) => {
@@ -88,29 +93,10 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
 
   const [columns, setColumns] = useState<Column[]>([
     {
-      id: 'status',
-      header: 'Status',
+      id: 'checkbox',
+      header: '',
       cell: (task) => (
-        <div className="flex items-center">
-          <Checkbox 
-            checked={task.status === 'done'} 
-            onCheckedChange={() => handleToggleStatus(task)} 
-            className="mr-2"
-          />
-          <Badge className={`text-xs ${
-            task.status === 'done' ? 'bg-green-100 text-green-800' : 
-            task.status === 'in-progress' ? 'bg-purple-100 text-purple-800' : 
-            'bg-gray-100 text-gray-800'
-          }`}>
-            {task.status === 'todo' ? (
-              <><Circle size={12} className="mr-1" /> To Do</>
-            ) : task.status === 'in-progress' ? (
-              <><Clock size={12} className="mr-1" /> In Progress</>
-            ) : (
-              <><CheckCircle size={12} className="mr-1" /> Done</>
-            )}
-          </Badge>
-        </div>
+        <Checkbox className="mr-2" />
       ),
       visible: true
     },
@@ -119,9 +105,21 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
       header: 'Task',
       cell: (task) => (
         <div className="flex flex-col">
-          <span className={`font-medium ${task.status === 'done' ? 'line-through text-muted-foreground' : ''}`}>
-            {task.title}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {task.title}
+            </span>
+            {task.children && task.children.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => toggleTaskCollapsed(task.id)}
+              >
+                {collapsedTasks[task.id] ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+              </Button>
+            )}
+          </div>
           {task.description && (
             <p className="text-xs text-muted-foreground mt-1 truncate">
               {task.description}
@@ -161,6 +159,45 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
       visible: true
     },
     {
+      id: 'notes',
+      header: 'Notes',
+      cell: (task) => (
+        <span className="text-sm truncate max-w-[200px] inline-block">
+          {task.notes || '-'}
+        </span>
+      ),
+      visible: true
+    },
+    {
+      id: 'estimatedTime',
+      header: 'Est. Time',
+      cell: (task) => (
+        task.estimatedTime ? (
+          <div className="text-sm flex items-center gap-1">
+            <Clock size={14} />
+            {Math.floor(task.estimatedTime / 60)}h {task.estimatedTime % 60}m
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">-</span>
+        )
+      ),
+      visible: true
+    },
+    {
+      id: 'timeTracked',
+      header: 'Time Tracked',
+      cell: (task) => (
+        task.timeTracked > 0 ? (
+          <div className="text-sm">
+            {Math.floor(task.timeTracked / 60)}h {task.timeTracked % 60}m
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">-</span>
+        )
+      ),
+      visible: true
+    },
+    {
       id: 'project',
       header: 'Project',
       cell: (task) => (
@@ -177,6 +214,27 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
   };
 
   const visibleColumns = columns.filter(column => column.visible);
+
+  const renderTaskRow = (task: Task, isChild = false) => {
+    return (
+      <React.Fragment key={task.id}>
+        <TableRow className={isChild ? "bg-muted/10" : ""}>
+          {visibleColumns.map(column => (
+            <TableCell 
+              key={`${task.id}-${column.id}`}
+              className={isChild ? "pl-10" : ""}
+            >
+              {column.cell(task)}
+            </TableCell>
+          ))}
+        </TableRow>
+        
+        {task.children && task.children.length > 0 && !collapsedTasks[task.id] && (
+          task.children.map(childTask => renderTaskRow(childTask, true))
+        )}
+      </React.Fragment>
+    );
+  };
 
   return (
     <div className="border rounded-md overflow-hidden">
@@ -204,55 +262,63 @@ const TableViewMode: React.FC<TableViewModeProps> = ({
       </div>
 
       {Object.entries(groupedTasks).map(([group, groupTasks]) => (
-        <div key={group}>
+        <Collapsible key={group} open={!collapsedGroups[group]}>
           {group !== 'All Tasks' && (
-            <div className="px-4 py-2 bg-muted/50 font-semibold text-muted-foreground">
-              {group}
-            </div>
+            <CollapsibleTrigger className="w-full">
+              <div 
+                className="px-4 py-2 bg-muted/50 font-semibold text-muted-foreground flex items-center cursor-pointer"
+                onClick={() => onToggleGroup(group)}
+              >
+                {collapsedGroups[group] ? (
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                )}
+                {group}
+              </div>
+            </CollapsibleTrigger>
           )}
-          <Table>
-            {group === Object.keys(groupedTasks)[0] && (
-              <TableHeader>
-                <TableRow>
-                  {visibleColumns.map(column => (
-                    <TableHead key={column.id}>
-                      <button 
-                        className="flex items-center gap-1 font-medium text-sm"
-                        onClick={() => {
-                          if (['title', 'dueDate', 'priority', 'status'].includes(column.id)) {
-                            handleSort(column.id as SortField);
-                          }
-                        }}
-                      >
-                        {column.header}
-                        {sortField === column.id && (
-                          sortDirection === 'asc' ? (
-                            <ArrowUp className="h-3 w-3" />
-                          ) : (
-                            <ArrowDown className="h-3 w-3" />
-                          )
-                        )}
-                      </button>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-            )}
-            <TableBody>
-              {groupTasks.length > 0 ? (
-                groupTasks.map(task => (
-                  <TableRow key={task.id} className={task.status === 'done' ? 'bg-muted/30' : ''}>
+          <CollapsibleContent>
+            <Table>
+              {group === Object.keys(groupedTasks)[0] && (
+                <TableHeader>
+                  <TableRow>
                     {visibleColumns.map(column => (
-                      <TableCell key={`${task.id}-${column.id}`}>
-                        {column.cell(task)}
-                      </TableCell>
+                      <TableHead key={column.id}>
+                        {column.id !== 'checkbox' ? (
+                          <button 
+                            className="flex items-center gap-1 font-medium text-sm"
+                            onClick={() => {
+                              if (['title', 'dueDate', 'priority', 'estimatedTime', 'timeTracked'].includes(column.id)) {
+                                handleSort(column.id as SortField);
+                              }
+                            }}
+                          >
+                            {column.header}
+                            {sortField === column.id && (
+                              sortDirection === 'asc' ? (
+                                <ArrowUp className="h-3 w-3" />
+                              ) : (
+                                <ArrowDown className="h-3 w-3" />
+                              )
+                            )}
+                          </button>
+                        ) : (
+                          column.header
+                        )}
+                      </TableHead>
                     ))}
                   </TableRow>
-                ))
-              ) : null}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+              )}
+              <TableBody>
+                {groupTasks.length > 0 ? (
+                  groupTasks.filter(task => !task.parentId).map(task => renderTaskRow(task))
+                ) : null}
+              </TableBody>
+            </Table>
+          </CollapsibleContent>
+        </Collapsible>
       ))}
       {tasks.length === 0 && (
         <div className="p-8 text-center text-muted-foreground">

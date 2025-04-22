@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
-export type GroupBy = 'none' | 'project' | 'date' | 'priority' | 'status';
-export type SortBy = 'title' | 'date' | 'priority' | 'status';
+export type GroupBy = 'none' | 'project' | 'date' | 'priority';
+export type SortBy = 'title' | 'date' | 'priority' | 'estimatedTime' | 'timeTracked';
 
 interface ListToolbarProps {
   groupBy: GroupBy;
@@ -48,7 +48,6 @@ const ListToolbar: React.FC<ListToolbarProps> = ({
             <DropdownMenuRadioItem value="project">By Project</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="date">By Date</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="priority">By Priority</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="status">By Status</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -63,9 +62,10 @@ const ListToolbar: React.FC<ListToolbarProps> = ({
         <DropdownMenuContent>
           <DropdownMenuRadioGroup value={sortBy} onValueChange={value => onSortByChange(value as SortBy)}>
             <DropdownMenuRadioItem value="title">By Title</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="date">By Date</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="date">By Due Date</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="priority">By Priority</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="status">By Status</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="estimatedTime">By Estimated Time</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="timeTracked">By Time Tracked</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}>

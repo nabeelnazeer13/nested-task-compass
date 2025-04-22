@@ -5,11 +5,12 @@ import { useTaskContext, Task } from '@/context/TaskContext';
 import { useFilterContext, FilterType, ViewMode } from '@/context/FilterContext';
 import FilterButton from '@/components/filters/FilterButton';
 import FilterPills from '@/components/filters/FilterPills';
-import { List, Table } from 'lucide-react';
+import { List, Table, ChevronDown, ChevronUp } from 'lucide-react';
 import ListViewMode from './ListViewMode';
 import TableViewMode from './TableViewMode';
 import ListToolbar, { GroupBy, SortBy } from './ListToolbar';
 import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type ViewFormat = 'list' | 'table';
 
@@ -20,22 +21,28 @@ const ListView: React.FC = () => {
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [sortBy, setSortBy] = useState<SortBy>('title');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  
+  // Toggle group collapse state
+  const toggleGroupCollapsed = (groupName: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
   
   // Get filtered tasks based on active filters
   const getFilteredTasks = () => {
     let filteredTasks = [...tasks];
     
     if (excludeCompleted) {
-      filteredTasks = filteredTasks.filter(task => task.status !== 'done');
+      filteredTasks = filteredTasks.filter(task => false); // Remove status-based filtering
     }
     
     activeFilters.forEach(filter => {
       switch (filter.type) {
         case FilterType.PRIORITY:
           filteredTasks = filteredTasks.filter(task => task.priority === filter.value);
-          break;
-        case FilterType.STATUS:
-          filteredTasks = filteredTasks.filter(task => task.status === filter.value);
           break;
         case FilterType.PROJECT:
           filteredTasks = filteredTasks.filter(task => task.projectId === filter.value);
@@ -66,8 +73,8 @@ const ListView: React.FC = () => {
           break;
         }
         case 'status': {
-          const statusOrder = { 'todo': 0, 'in-progress': 1, 'done': 2 };
-          comparison = statusOrder[a.status] - statusOrder[b.status];
+          // Remove status-based sorting
+          comparison = 0;
           break;
         }
       }
@@ -99,10 +106,6 @@ const ListView: React.FC = () => {
           break;
         case 'priority':
           groupKey = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
-          break;
-        case 'status':
-          groupKey = task.status === 'todo' ? 'To Do' : 
-                     task.status === 'in-progress' ? 'In Progress' : 'Done';
           break;
       }
       
@@ -163,12 +166,27 @@ const ListView: React.FC = () => {
 
       {viewFormat === 'list' ? (
         Object.entries(groupedTasks).map(([group, tasks]) => (
-          <div key={group} className="space-y-4">
+          <Collapsible 
+            key={group}
+            className="space-y-4"
+            open={!collapsedGroups[group]}
+          >
             {group !== 'All Tasks' && (
-              <h3 className="text-lg font-semibold text-muted-foreground">{group}</h3>
+              <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                <div className="text-lg font-semibold text-muted-foreground flex items-center">
+                  {collapsedGroups[group] ? (
+                    <ChevronUp className="h-4 w-4 mr-2" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                  )}
+                  {group}
+                </div>
+              </CollapsibleTrigger>
             )}
-            <ListViewMode tasks={tasks} />
-          </div>
+            <CollapsibleContent>
+              <ListViewMode tasks={tasks} />
+            </CollapsibleContent>
+          </Collapsible>
         ))
       ) : (
         <TableViewMode 
@@ -181,6 +199,8 @@ const ListView: React.FC = () => {
           }}
           groupBy={groupBy}
           groupedTasks={groupedTasks}
+          collapsedGroups={collapsedGroups}
+          onToggleGroup={toggleGroupCollapsed}
         />
       )}
     </div>

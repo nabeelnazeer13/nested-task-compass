@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import AddTaskFormDialog from '@/components/tasks/AddTaskFormDialog';
 
 const AppLayout = () => {
   const { selectedView, setSelectedView, addProject } = useTaskContext();
   const [isAddingProject, setIsAddingProject] = React.useState(false);
+  const [isAddingTask, setIsAddingTask] = React.useState(false);
   const [newProject, setNewProject] = React.useState({ name: '', description: '' });
 
   const handleAddProject = () => {
@@ -37,42 +39,55 @@ const AppLayout = () => {
       <header className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Quire</h1>
         
-        <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Project Name</Label>
-                <Input 
-                  id="name" 
-                  value={newProject.name}
-                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  placeholder="Enter project name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea 
-                  id="description" 
-                  value={newProject.description}
-                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  placeholder="Enter project description"
-                />
-              </div>
-              <Button onClick={handleAddProject} className="w-full">
-                Create Project
+        <div className="flex gap-2">
+          <AddTaskFormDialog 
+            open={isAddingTask}
+            onOpenChange={setIsAddingTask}
+            triggerElement={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Task
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            }
+          />
+          
+          <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Project
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Project</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Project Name</Label>
+                  <Input 
+                    id="name" 
+                    value={newProject.name}
+                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                    placeholder="Enter project name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Textarea 
+                    id="description" 
+                    value={newProject.description}
+                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                    placeholder="Enter project description"
+                  />
+                </div>
+                <Button onClick={handleAddProject} className="w-full">
+                  Create Project
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </header>
 
       <Tabs 
