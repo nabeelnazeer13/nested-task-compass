@@ -22,7 +22,6 @@ const ListView: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   
-  // Toggle group collapse state
   const toggleGroupCollapsed = (groupName: string) => {
     setCollapsedGroups(prev => ({
       ...prev,
@@ -30,7 +29,6 @@ const ListView: React.FC = () => {
     }));
   };
   
-  // Get filtered tasks based on active filters
   const getFilteredTasks = () => {
     let filteredTasks = [...tasks];
     
@@ -117,7 +115,6 @@ const ListView: React.FC = () => {
       groups[groupKey].push(task);
     });
     
-    // Sort tasks within each group
     Object.keys(groups).forEach(key => {
       groups[key] = sortTasks(groups[key]);
     });

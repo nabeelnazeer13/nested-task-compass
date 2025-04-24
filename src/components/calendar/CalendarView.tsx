@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameDay, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, List } from 'lucide-react';
 import CalendarDay from './CalendarDay';
 import FilterButton from '@/components/filters/FilterButton';
 import FilterPills from '@/components/filters/FilterPills';
 import { useFilterContext, FilterType } from '@/context/FilterContext';
+import { toast } from "sonner";
 
 type CalendarViewType = 'day' | 'week' | 'month';
 
@@ -18,7 +19,6 @@ const CalendarView: React.FC = () => {
   const [showTaskList, setShowTaskList] = useState(true);
   const [showMiniCalendar, setShowMiniCalendar] = useState(false);
   
-  // Only filter tasks WITHOUT a dueDate for the sidebar now
   const getUndatedTasks = () => {
     let filteredTasks = [...tasks];
     activeFilters.forEach(filter => {
@@ -31,11 +31,9 @@ const CalendarView: React.FC = () => {
           break;
       }
     });
-    // Only tasks without a dueDate
     return filteredTasks.filter(task => !task.dueDate);
   };
 
-  // Only date-specific tasks for display in calendar grid
   const getTasksForDate = (date: Date) => {
     let filteredTasks = [...tasks];
     activeFilters.forEach(filter => {
@@ -96,7 +94,18 @@ const CalendarView: React.FC = () => {
   };
 
   const handleTaskDrop = (task: Task, date: Date, timeSlot?: string) => {
-    console.log(`Dropped task ${task.id} on ${format(date, 'yyyy-MM-dd')}${timeSlot ? ` at ${timeSlot}` : ''}`);
+    try {
+      const updatedTask = {
+        ...task,
+        dueDate: date
+      };
+      
+      updateTask(updatedTask);
+      toast.success(`Task "${task.title}" moved to ${format(date, 'MMM d, yyyy')}`);
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error('Failed to update task date');
+    }
   };
 
   return (
@@ -192,7 +201,6 @@ const CalendarView: React.FC = () => {
               Tasks
             </div>
             <div className="p-2 divide-y">
-              {/* Show undated tasks only */}
               {getUndatedTasks().length > 0 ? (
                 <div className="py-2">
                   <h4 className="font-medium text-sm mb-2">Tasks without dates</h4>
