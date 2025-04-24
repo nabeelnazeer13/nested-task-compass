@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
@@ -103,11 +102,13 @@ const CalendarView: React.FC = () => {
     try {
       const updatedTask = {
         ...task,
-        dueDate: date
+        dueDate: date,
+        timeSlot: timeSlot || undefined
       };
       
       updateTask(updatedTask);
-      toast.success(`Task "${task.title}" moved to ${format(date, 'MMM d, yyyy')}`);
+      const timeInfo = timeSlot ? ` at ${timeSlot}` : '';
+      toast.success(`Task "${task.title}" moved to ${format(date, 'MMM d, yyyy')}${timeInfo}`);
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task date');

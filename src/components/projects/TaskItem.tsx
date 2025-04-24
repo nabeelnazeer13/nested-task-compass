@@ -155,6 +155,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
                 <Calendar size={12} />
                 {format(new Date(task.dueDate), 'MMM d')}
+                {task.timeSlot && <span className="ml-1">{task.timeSlot}</span>}
               </Badge>
             )}
             
@@ -162,7 +163,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
               {priorityLabels[task.priority]}
             </Badge>
             
-            {task.estimatedTime && (
+            {task.estimatedTime > 0 && (
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
                 <Clock size={12} />
                 Est: {formatMinutes(task.estimatedTime)}

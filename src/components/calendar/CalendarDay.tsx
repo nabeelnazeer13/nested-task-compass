@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { format } from 'date-fns';
 import AddTimeBlockDialog from './AddTimeBlockDialog';
@@ -41,6 +41,13 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
   const [isAddingTimeBlock, setIsAddingTimeBlock] = useState(false);
   const [draggedOverSlot, setDraggedOverSlot] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  // Separate tasks into all-day tasks and time-slotted tasks
+  const allDayTasks = tasks.filter(task => !task.timeSlot);
+  const timeSlottedTasks = tasks.filter(task => task.timeSlot).sort((a, b) => {
+    // Sort by time slot
+    return (a.timeSlot || '').localeCompare(b.timeSlot || '');
+  });
   
   const dayTimeBlocks = timeBlocks.filter(block => {
     return block.date && format(block.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
@@ -96,10 +103,14 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
         const allTasks = window.___allTasks || [];
         const foundTask = allTasks.find((t: Task) => t.id === taskId);
         if (foundTask && onTaskDrop) {
+          // For all-day section, pass no timeSlot
           onTaskDrop(foundTask);
         }
       } else if (droppedTask && onTaskDrop) {
-        onTaskDrop(droppedTask);
+        // If dropping within the same day, from a time slot to all-day,
+        // explicitly set timeSlot to undefined to remove it
+        const updatedTask = { ...droppedTask, timeSlot: undefined };
+        onTaskDrop(updatedTask);
       }
     } catch (error) {
       console.error('Error handling drop:', error);
@@ -146,6 +157,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
         }
         
         if (droppedTask) {
+          // We're dropping into a time slot, so include the time
           onTaskDrop(droppedTask, snappedTime);
         }
       }
@@ -188,6 +200,11 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
                 <div className="text-xs text-gray-600 flex items-center gap-1">
                   <Clock size={10} />
                   Est: {formatMinutes(task.estimatedTime)}
+                </div>
+              )}
+              {task.timeSlot && (
+                <div className="text-xs text-gray-600">
+                  Time: {task.timeSlot}
                 </div>
               )}
             </div>
@@ -248,18 +265,63 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
     );
   }
 
+  // Hour slots view with all-day section at the top
   const hours = getHourlySlots();
 
   return (
     <div className="calendar-day border min-h-[900px] bg-white">
-      <div className="flex flex-col h-full">
+      {/* All-day tasks section */}
+      <div 
+        className={`border-b p-1 ${isDragOver ? 'bg-primary/10' : 'bg-muted/10'}`}
+        style={{ minHeight: '60px' }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="text-xs text-muted-foreground ml-1 mb-1">All day</div>
+        <div className="flex flex-wrap gap-1">
+          {allDayTasks.map((task) => (
+            <div 
+              key={task.id}
+              className={`calendar-task ${
+                task.priority === 'high' ? 'bg-red-100 border-l-2 border-red-500' : 
+                task.priority === 'medium' ? 'bg-yellow-100 border-l-2 border-yellow-500' : 
+                'bg-blue-100 border-l-2 border-blue-500'
+              } p-1 rounded-sm text-xs mb-1 cursor-pointer max-w-full`}
+              onClick={() => handleTaskClick(task)}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', task.id);
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+            >
+              <div className="flex items-center gap-1 truncate">
+                <span className="truncate">{task.title}</span>
+                {activeTimeTracking && activeTimeTracking.taskId === task.id && (
+                  <Play size={10} className="text-green-600 animate-pulse flex-shrink-0" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Hourly slots */}
+      <div className="flex flex-col">
         {hours.map((hour) => {
           const hourStr = hour.toString().padStart(2, '0') + ':00';
+          
+          // Find tasks that belong to this hour
+          const hourTasks = timeSlottedTasks.filter(task => 
+            task.timeSlot && task.timeSlot.startsWith(hour.toString().padStart(2, '0'))
+          );
 
+          // Get time blocks for this hour
           const hourBlocks = dayTimeBlocks.filter(tb => {
             return tb.startTime && tb.startTime.startsWith(hourStr);
           });
 
+          // Get time trackings for this hour
           const trackings = dayTimeTrackings.filter(trk => {
             const startTime = format(new Date(trk.startTime), 'HH:00');
             return startTime === hourStr;
@@ -273,7 +335,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
               }`}
               style={{ minHeight: '48px' }}
               onDragOver={e => handleHourSlotDragOver(e, hour)}
-              onDragLeave={e => handleHourSlotDragLeave(e)}
+              onDragLeave={handleHourSlotDragLeave}
               onDrop={e => handleHourSlotDrop(e, hour)}
             >
               <div className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground w-8 pl-1 select-none">
@@ -282,20 +344,46 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
               {draggedOverSlot && draggedOverSlot.startsWith(hourStr) && (
                 <div className="absolute inset-0 bg-primary/15 pointer-events-none z-10" />
               )}
-              <div className="ml-9 pr-2 flex flex-col gap-1">
+              <div className="ml-9 pr-2 flex flex-col gap-1 py-0.5">
+                {/* Tasks with specific time slots */}
+                {hourTasks.map((task) => (
+                  <div 
+                    key={task.id}
+                    className={`calendar-task ${
+                      task.priority === 'high' ? 'bg-red-100 border-l-2 border-red-500' : 
+                      task.priority === 'medium' ? 'bg-yellow-100 border-l-2 border-yellow-500' : 
+                      'bg-blue-100 border-l-2 border-blue-500'
+                    } p-1 rounded-sm text-xs cursor-pointer`}
+                    onClick={() => handleTaskClick(task)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', task.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{task.title}</span>
+                      <span className="text-xs text-muted-foreground">{task.timeSlot}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Time blocks */}
                 {hourBlocks.map((block) => {
                   const task = getTaskById(block.taskId);
                   if (!task) return null;
                   return (
                     <div 
                       key={block.id}
-                      className="calendar-task bg-primary/10 border-l-2 border-primary text-xs p-1 rounded-sm mt-0.5"
+                      className="calendar-task bg-primary/10 border-l-2 border-primary text-xs p-1 rounded-sm"
                     >
                       <div className="font-medium">{task.title}</div>
                       <div>{block.startTime} - {block.endTime}</div>
                     </div>
                   );
                 })}
+                
+                {/* Time trackings */}
                 {trackings.map((tracking) => {
                   const task = getTaskById(tracking.taskId);
                   if (!task) return null;

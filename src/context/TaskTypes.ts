@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 
 export type Priority = 'low' | 'medium' | 'high';
@@ -17,6 +16,7 @@ export interface Task {
   estimatedTime?: number;
   timeTracked: number;
   completed?: boolean;
+  timeSlot?: string; // Format: "HH:MM" - specific time for the task on its due date
 }
 
 export interface TimeTracking {
