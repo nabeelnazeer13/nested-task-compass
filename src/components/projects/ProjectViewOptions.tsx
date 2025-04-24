@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { GroupBy, SortBy, useFilterContext, ViewMode } from '@/context/FilterContext';
-import { ChevronDown, Group, SortAscending } from 'lucide-react';
+import { ChevronDown, Group, SortAsc } from 'lucide-react';
 
 const ProjectViewOptions = () => {
   const { 
@@ -87,7 +87,7 @@ const ProjectViewOptions = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
-            <SortAscending className="h-4 w-4" />
+            <SortAsc className="h-4 w-4" />
             Sort by
             <ChevronDown className="h-4 w-4" />
           </Button>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -6,7 +7,7 @@ import { ChevronDown, Filter } from 'lucide-react';
 import AddTaskDialog from './AddTaskDialog';
 import FilterButton from '@/components/filters/FilterButton';
 import FilterPills from '@/components/filters/FilterPills';
-import { useFilterContext } from '@/context/FilterContext';
+import { GroupBy, useFilterContext } from '@/context/FilterContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ProjectViewOptions from './ProjectViewOptions';
