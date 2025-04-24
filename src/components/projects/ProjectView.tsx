@@ -29,8 +29,6 @@ const ProjectView: React.FC = () => {
   const getFilteredTasks = () => {
     let filteredTasks = [...tasks];
     
-    // We're no longer filtering by completed status since it's been removed
-    
     activeFilters.forEach(filter => {
       switch (filter.type) {
         case FilterType.PRIORITY:
@@ -39,7 +37,6 @@ const ProjectView: React.FC = () => {
         case FilterType.PROJECT:
           filteredTasks = filteredTasks.filter(task => task.projectId === filter.value);
           break;
-        // Remove FilterType.STATUS case since status has been removed
       }
     });
     

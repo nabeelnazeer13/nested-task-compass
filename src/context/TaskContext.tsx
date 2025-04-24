@@ -32,8 +32,17 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const storedTimeTrackings = localStorage.getItem('quire-timetrackings');
     const storedActiveTimeTracking = localStorage.getItem('quire-active-timetracking');
     
-    if (storedProjects) setProjects(JSON.parse(storedProjects));
-    if (storedTasks) {
+    if (!storedProjects) {
+      setProjects(sampleProjects);
+      localStorage.setItem('quire-projects', JSON.stringify(sampleProjects));
+    } else {
+      setProjects(JSON.parse(storedProjects));
+    }
+
+    if (!storedTasks) {
+      setTasks(sampleTasks);
+      localStorage.setItem('quire-tasks', JSON.stringify(sampleTasks));
+    } else {
       const parsedTasks = JSON.parse(storedTasks);
       parsedTasks.forEach((task: any) => {
         if (task.dueDate) task.dueDate = new Date(task.dueDate);
@@ -46,14 +55,22 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setTasks(parsedTasks);
     }
-    if (storedTimeBlocks) {
+
+    if (!storedTimeBlocks) {
+      setTimeBlocks(sampleTimeBlocks);
+      localStorage.setItem('quire-timeblocks', JSON.stringify(sampleTimeBlocks));
+    } else {
       const parsedTimeBlocks = JSON.parse(storedTimeBlocks);
       parsedTimeBlocks.forEach((block: any) => {
         if (block.date) block.date = new Date(block.date);
       });
       setTimeBlocks(parsedTimeBlocks);
     }
-    if (storedTimeTrackings) {
+
+    if (!storedTimeTrackings) {
+      setTimeTrackings([]);
+      localStorage.setItem('quire-timetrackings', JSON.stringify([]));
+    } else {
       const parsedTimeTrackings = JSON.parse(storedTimeTrackings);
       parsedTimeTrackings.forEach((tracking: any) => {
         if (tracking.startTime) tracking.startTime = new Date(tracking.startTime);
@@ -61,7 +78,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setTimeTrackings(parsedTimeTrackings);
     }
-    if (storedActiveTimeTracking) {
+
+    if (!storedActiveTimeTracking) {
+      setActiveTimeTracking(null);
+      localStorage.setItem('quire-active-timetracking', JSON.stringify(null));
+    } else {
       const parsedActiveTracking = JSON.parse(storedActiveTimeTracking);
       if (parsedActiveTracking) {
         if (parsedActiveTracking.startTime) 

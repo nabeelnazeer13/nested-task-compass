@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext, Project, Task } from '@/context/TaskContext';
 import { ChevronDown, ChevronUp, Plus, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,8 @@ interface ProjectItemProps {
 }
 
 const ProjectItem: React.FC<ProjectItemProps> = ({ project, onAddTask }) => {
-  const { 
-    toggleProjectExpanded, 
-    deleteProject, 
-    tasks
-  } = useTaskContext();
+  const { deleteProject, tasks } = useTaskContext();
+  const [isExpanded, setIsExpanded] = useState(true);
 
   // Get top-level tasks for this project
   const projectTasks = tasks.filter(
@@ -36,9 +33,9 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onAddTask }) => {
             variant="ghost" 
             size="sm" 
             className="p-1 h-auto"
-            onClick={() => toggleProjectExpanded(project.id)}
+            onClick={() => setIsExpanded(!isExpanded)}
           >
-            {project.isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </Button>
           <div>
             <h3 className="font-medium">{project.name}</h3>
@@ -74,7 +71,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onAddTask }) => {
         </div>
       </div>
       
-      {project.isExpanded && (
+      {isExpanded && (
         <div className="bg-card/50 p-2">
           {projectTasks.length > 0 ? (
             <div className="space-y-1">
