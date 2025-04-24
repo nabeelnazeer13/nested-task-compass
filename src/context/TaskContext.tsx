@@ -15,7 +15,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(sampleTimeBlocks);
   const [timeTrackings, setTimeTrackings] = useState<TimeTracking[]>([]);
   const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
-  const [selectedView, setSelectedView] = useState<'projects' | 'list' | 'calendar'>('projects');
+  const [selectedView, setSelectedView] = useState<'projects' | 'calendar'>('projects');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   useEffect(() => {
