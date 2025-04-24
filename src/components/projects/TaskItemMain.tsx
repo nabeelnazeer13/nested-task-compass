@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Task, Priority } from '@/context/TaskTypes';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import TaskItemDetails from './TaskItemDetails';
 import TaskItemActions from './TaskItemActions';
 import { useTaskContext } from '@/context/TaskContext';
+import { toast } from "sonner";
 
 interface TaskItemMainProps {
   task: Task;

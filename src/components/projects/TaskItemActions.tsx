@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Task } from '@/context/TaskTypes';
+import { Task, Priority } from '@/context/TaskTypes';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Plus, Square, Play, Timer } from 'lucide-react';
+import { MoreHorizontal, Plus, Square, Play } from 'lucide-react';
 import { useTaskContext } from '@/context/TaskContext';
 import { 
   DropdownMenu, 
@@ -29,6 +29,17 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
   } = useTaskContext();
   
   const isTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
+
+  const handleToggleCompleted = (checked: boolean) => {
+    updateTask({
+      ...task,
+      completed: checked
+    });
+    
+    if (checked) {
+      toast.success(`Task "${task.title}" marked as completed`);
+    }
+  };
 
   const handleTimeTrackingAction = () => {
     if (isTracking) {
