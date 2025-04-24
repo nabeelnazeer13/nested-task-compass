@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { toast } from "sonner";
 type CalendarViewType = 'day' | 'week' | 'month';
 
 const CalendarView: React.FC = () => {
-  const { selectedDate, setSelectedDate, tasks } = useTaskContext();
+  const { selectedDate, setSelectedDate, tasks, updateTask } = useTaskContext();
   const { activeFilters } = useFilterContext();
   const [view, setView] = useState<CalendarViewType>('week');
   const [showTaskList, setShowTaskList] = useState(true);
