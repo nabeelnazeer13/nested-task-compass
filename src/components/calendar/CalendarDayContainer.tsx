@@ -1,10 +1,12 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import AddTimeBlockDialog from './AddTimeBlockDialog';
 import AllDaySection from './AllDaySection';
 import TimeSlotGrid from './TimeSlotGrid';
+import TaskBlock from './TaskBlock';
+import TimeBlockDisplay from './TimeBlockDisplay';
+import TimeTrackingDisplay from './TimeTrackingDisplay';
 import { findTaskById } from '@/context/TaskHelpers';
 
 interface CalendarDayContainerProps {
