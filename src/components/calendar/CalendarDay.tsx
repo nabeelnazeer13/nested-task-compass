@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { format } from 'date-fns';
@@ -39,6 +40,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingTimeBlock, setIsAddingTimeBlock] = useState(false);
   const [draggedOverSlot, setDraggedOverSlot] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const dayTimeBlocks = timeBlocks.filter(block => {
     return block.date && format(block.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
@@ -67,10 +69,48 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
     setIsAddingTimeBlock(true);
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Prevent default to allow drop
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    setDraggedOverSlot(null);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    setDraggedOverSlot(null);
+    
+    try {
+      const taskId = e.dataTransfer.getData('text/plain');
+      if (!taskId) return;
+      
+      const droppedTask = tasks.find(t => t.id === taskId);
+      if (!droppedTask && onTaskDrop) {
+        // Look for the task in the global tasks
+        const allTasks = window.___allTasks || [];
+        const foundTask = allTasks.find((t: Task) => t.id === taskId);
+        if (foundTask && onTaskDrop) {
+          onTaskDrop(foundTask);
+        }
+      } else if (droppedTask && onTaskDrop) {
+        onTaskDrop(droppedTask);
+      }
+    } catch (error) {
+      console.error('Error handling drop:', error);
+    }
+  };
+
   const handleHourSlotDragOver = (e: React.DragEvent, hour: number) => {
     e.preventDefault();
     if (!oneHourSlots) return;
 
+    setIsDragOver(true);
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const y = e.clientY - rect.top;
     const snapMinute = y < rect.height / 2 ? 0 : 30;
@@ -78,33 +118,50 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
     setDraggedOverSlot(timeSlot);
   };
 
-  const handleHourSlotDragLeave = (e: React.DragEvent, hour: number) => {
+  const handleHourSlotDragLeave = (e: React.DragEvent) => {
+    setIsDragOver(false);
     setDraggedOverSlot(null);
   };
 
   const handleHourSlotDrop = (e: React.DragEvent, hour: number) => {
     e.preventDefault();
+    setIsDragOver(false);
     setDraggedOverSlot(null);
 
-    const taskId = window.___draggingTaskId;
-    if (!taskId) return;
+    try {
+      const taskId = e.dataTransfer.getData('text/plain');
+      if (!taskId) return;
 
-    let snappedTime = draggedOverSlot || `${hour.toString().padStart(2, '0')}:00`;
-    snappedTime = snapToNearestHalfHour(snappedTime);
+      let snappedTime = draggedOverSlot || `${hour.toString().padStart(2, '0')}:00`;
+      snappedTime = snapToNearestHalfHour(snappedTime);
 
-    if (onTaskDrop) {
-      const allDayTasks = tasks;
-      const droppedTask = allDayTasks.find(t => t.id === taskId);
-      if (droppedTask) {
-        onTaskDrop(droppedTask, snappedTime);
+      if (onTaskDrop) {
+        // Try to find in tasks list for this day first
+        let droppedTask = tasks.find(t => t.id === taskId);
+        
+        // If not found in day tasks, try global list
+        if (!droppedTask) {
+          const allTasks = window.___allTasks || [];
+          droppedTask = allTasks.find((t: Task) => t.id === taskId);
+        }
+        
+        if (droppedTask) {
+          onTaskDrop(droppedTask, snappedTime);
+        }
       }
+    } catch (error) {
+      console.error('Error handling hour slot drop:', error);
     }
-    window.___draggingTaskId = undefined;
   };
 
   if (!oneHourSlots) {
     return (
-      <div className="calendar-day relative min-h-[150px] border p-2">
+      <div 
+        className={`calendar-day relative min-h-[150px] border p-2 ${isDragOver ? 'bg-primary/10' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <div className="space-y-1">
           {tasks.map((task) => (
             <div 
@@ -116,6 +173,10 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
               } p-2 rounded-sm text-sm mb-1 cursor-pointer`}
               onClick={() => handleTaskClick(task)}
               draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', task.id);
+                e.dataTransfer.effectAllowed = 'move';
+              }}
             >
               <div className="flex justify-between items-center">
                 <span>{task.title}</span>
@@ -207,10 +268,12 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ date, tasks, onTaskDrop, oneH
           return (
             <div
               key={hour}
-              className={`border-b h-12 group relative transition-all `}
+              className={`border-b h-12 group relative transition-all ${
+                draggedOverSlot && draggedOverSlot.startsWith(hourStr) ? 'bg-primary/15' : ''
+              }`}
               style={{ minHeight: '48px' }}
               onDragOver={e => handleHourSlotDragOver(e, hour)}
-              onDragLeave={e => handleHourSlotDragLeave(e, hour)}
+              onDragLeave={e => handleHourSlotDragLeave(e)}
               onDrop={e => handleHourSlotDrop(e, hour)}
             >
               <div className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground w-8 pl-1 select-none">

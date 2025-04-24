@@ -59,6 +59,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [showTimeTrackingDialog, setShowTimeTrackingDialog] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleUpdatePriority = (priority: Priority) => {
     updateTask({
@@ -99,9 +100,33 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
     setShowTimeTrackingDialog(true);
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    e.dataTransfer.setData('text/plain', task.id);
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Add task to window for access in calendar
+    if (!window.___draggingTaskId) {
+      window.___draggingTaskId = task.id;
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    // Clean up the global reference
+    setTimeout(() => {
+      window.___draggingTaskId = undefined;
+    }, 100);
+  };
+
   return (
     <div className="task-container">
-      <div className={`flex items-center p-2 task-item ${task.completed ? 'opacity-60' : ''}`}>
+      <div 
+        className={`flex items-center p-2 task-item ${task.completed ? 'opacity-60' : ''} ${isDragging ? 'opacity-50' : ''}`}
+        draggable
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <div className="flex-none mr-2">
           <Checkbox 
             checked={task.completed} 

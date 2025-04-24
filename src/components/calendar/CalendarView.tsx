@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext, Task } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -19,6 +19,15 @@ const CalendarView: React.FC = () => {
   const [view, setView] = useState<CalendarViewType>('week');
   const [showTaskList, setShowTaskList] = useState(true);
   const [showMiniCalendar, setShowMiniCalendar] = useState(false);
+  
+  // Store all tasks in window for drag and drop access
+  useEffect(() => {
+    window.___allTasks = tasks;
+    
+    return () => {
+      delete window.___allTasks;
+    };
+  }, [tasks]);
   
   const getUndatedTasks = () => {
     let filteredTasks = [...tasks];
@@ -88,10 +97,6 @@ const CalendarView: React.FC = () => {
 
   const navigateToday = () => {
     setSelectedDate(new Date());
-  };
-
-  const handleDragStart = (task: Task) => {
-    window.___draggingTaskId = task.id;
   };
 
   const handleTaskDrop = (task: Task, date: Date, timeSlot?: string) => {
@@ -210,7 +215,10 @@ const CalendarView: React.FC = () => {
                       key={task.id}
                       className="p-2 mb-1 bg-background border rounded-sm text-sm hover:bg-muted cursor-grab"
                       draggable
-                      onDragStart={() => handleDragStart(task)}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', task.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
                     >
                       {task.title}
                     </div>
