@@ -1,104 +1,103 @@
 
 import React, { useState } from 'react';
-import { useTaskContext, Project, Task } from '@/context/TaskContext';
-import { ChevronDown, ChevronUp, Plus, MoreHorizontal } from 'lucide-react';
+import { Project, Task } from '@/context/TaskContext';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useTaskContext } from '@/context/TaskContext';
 import TaskItem from './TaskItem';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 interface ProjectItemProps {
   project: Project;
-  onAddTask: () => void;
+  onAddTask: (projectId: string) => void;
+  hideChildrenInitially?: boolean;
+  showOnlyTasks?: string[];
+  listMode?: boolean;
 }
 
-const ProjectItem: React.FC<ProjectItemProps> = ({ project, onAddTask }) => {
-  const { deleteProject, tasks } = useTaskContext();
-  const [isExpanded, setIsExpanded] = useState(true);
+const ProjectItem: React.FC<ProjectItemProps> = ({ 
+  project, 
+  onAddTask, 
+  hideChildrenInitially = false,
+  showOnlyTasks,
+  listMode = false
+}) => {
+  const { tasks, toggleProjectExpanded } = useTaskContext();
+  const [isExpanded, setIsExpanded] = useState(!hideChildrenInitially);
+  
+  const projectTasks = tasks
+    .filter(task => task.projectId === project.id && !task.parentId)
+    .sort((a, b) => {
+      // Sort by priority
+      const priorityValues: Record<string, number> = { high: 3, medium: 2, low: 1 };
+      const priorityDiff = priorityValues[b.priority] - priorityValues[a.priority];
+      
+      // If priority is the same, sort by due date (if available)
+      if (priorityDiff === 0) {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      
+      return priorityDiff;
+    });
 
-  // Get top-level tasks for this project
-  const projectTasks = tasks.filter(
-    task => task.projectId === project.id && !task.parentId
-  );
+  const filteredTasks = showOnlyTasks 
+    ? tasks.filter(task => showOnlyTasks.includes(task.id)) 
+    : projectTasks;
+
+  const handleToggleExpanded = () => {
+    if (!listMode) {
+      toggleProjectExpanded(project.id);
+    }
+    setIsExpanded(!isExpanded);
+  };
 
   return (
-    <div className="border rounded-lg overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between p-4 bg-card">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="p-1 h-auto"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </Button>
-          <div>
-            <h3 className="font-medium">{project.name}</h3>
-            {project.description && (
-              <p className="text-sm text-muted-foreground">{project.description}</p>
-            )}
+    <Card className="overflow-hidden">
+      {!listMode && (
+        <CardHeader className="pb-1 flex flex-row items-center justify-between space-y-0">
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-1 h-8 w-8"
+              onClick={handleToggleExpanded}
+            >
+              {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </Button>
+            <CardTitle className="text-lg">{project.name}</CardTitle>
+            <Badge variant="outline">{filteredTasks.length}</Badge>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
-            className="px-2"
-            onClick={onAddTask}
+            className="p-1 h-8 w-8"
+            onClick={() => onAddTask(project.id)}
           >
-            <Plus size={16} className="mr-1" /> Add Task
+            <Plus size={20} />
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2">
-                <MoreHorizontal size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem 
-                className="text-destructive"
-                onClick={() => deleteProject(project.id)}
-              >
-                Delete Project
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+        </CardHeader>
+      )}
       
-      {isExpanded && (
-        <div className="bg-card/50 p-2">
-          {projectTasks.length > 0 ? (
-            <div className="space-y-1">
-              {projectTasks.map((task) => (
-                <TaskItem 
-                  key={task.id} 
-                  task={task} 
-                  level={0}
-                />
+      {(isExpanded || listMode) && (
+        <CardContent className={listMode ? "p-0" : "pt-3"}>
+          {filteredTasks.length > 0 ? (
+            <div className="space-y-1 task-list">
+              {filteredTasks.map(task => (
+                <TaskItem key={task.id} task={task} level={0} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground">
-              <p>No tasks in this project yet</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={onAddTask}
-              >
-                <Plus size={16} className="mr-1" /> Add your first task
-              </Button>
+            <div className="py-2 text-center text-muted-foreground">
+              <p>No tasks yet</p>
             </div>
           )}
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 };
 

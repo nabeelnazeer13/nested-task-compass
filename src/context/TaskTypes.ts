@@ -16,6 +16,7 @@ export interface Task {
   notes?: string;
   estimatedTime?: number;
   timeTracked: number;
+  completed?: boolean;
 }
 
 export interface TimeTracking {

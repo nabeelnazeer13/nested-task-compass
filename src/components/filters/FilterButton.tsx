@@ -11,7 +11,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useFilterContext, FilterType, FilterOperator, ViewMode } from '@/context/FilterContext';
+import { 
+  useFilterContext, 
+  FilterType, 
+  FilterOperator, 
+  ViewMode,
+  GroupBy,
+  SortBy,
+  SortDirection,
+  DateGroup
+} from '@/context/FilterContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Priority } from '@/context/TaskContext';
 
@@ -22,7 +31,13 @@ const FilterButton: React.FC = () => {
     viewMode, 
     setViewMode, 
     excludeCompleted, 
-    setExcludeCompleted 
+    setExcludeCompleted,
+    groupBy,
+    setGroupBy,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection
   } = useFilterContext();
 
   const handleAddPriorityFilter = (priority: Priority) => {
@@ -40,6 +55,24 @@ const FilterButton: React.FC = () => {
       value: status,
       operator: FilterOperator.EQUALS,
       label: `Status: ${status}`
+    });
+  };
+
+  const handleAddDateFilter = (dateGroup: DateGroup) => {
+    const labels: Record<DateGroup, string> = {
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      thisWeek: 'This Week',
+      nextWeek: 'Next Week',
+      later: 'Later',
+      noDate: 'No Due Date'
+    };
+
+    addFilter({
+      type: FilterType.DUE_DATE,
+      value: dateGroup,
+      operator: FilterOperator.EQUALS,
+      label: `Due: ${labels[dateGroup]}`
     });
   };
 
@@ -79,16 +112,28 @@ const FilterButton: React.FC = () => {
           </DropdownMenuItem>
           <DropdownMenuItem 
             className={viewMode === ViewMode.GROUP_BY_DATE ? 'bg-accent' : ''}
-            onClick={() => setViewMode(ViewMode.GROUP_BY_DATE)}
+            onClick={() => {
+              setViewMode(ViewMode.GROUP_BY_DATE);
+              setGroupBy(GroupBy.DATE);
+            }}
           >
             Group by Date
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            className={viewMode === ViewMode.GROUP_BY_PRIORITY ? 'bg-accent' : ''}
+            onClick={() => {
+              setViewMode(ViewMode.GROUP_BY_PRIORITY);
+              setGroupBy(GroupBy.PRIORITY);
+            }}
+          >
+            Group by Priority
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
         <DropdownMenuSeparator />
         
         <DropdownMenuLabel>Options</DropdownMenuLabel>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={(e) => e.preventDefault()}>
           <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
             <Checkbox 
               id="exclude-completed" 
@@ -116,6 +161,30 @@ const FilterButton: React.FC = () => {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleAddPriorityFilter('low')}>
             Low Priority
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuLabel>Filter by Due Date</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => handleAddDateFilter(DateGroup.TODAY)}>
+            Today
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddDateFilter(DateGroup.TOMORROW)}>
+            Tomorrow
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddDateFilter(DateGroup.THIS_WEEK)}>
+            This Week
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddDateFilter(DateGroup.NEXT_WEEK)}>
+            Next Week
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddDateFilter(DateGroup.LATER)}>
+            Later
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddDateFilter(DateGroup.NO_DATE)}>
+            No Due Date
           </DropdownMenuItem>
         </DropdownMenuGroup>
         

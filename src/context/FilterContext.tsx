@@ -14,7 +14,36 @@ export enum ViewMode {
   ACTIVE_TASKS = 'activeTasks',
   ALL_TASKS = 'allTasks',
   GROUP_BY_PROJECT = 'groupByProject',
-  GROUP_BY_DATE = 'groupByDate'
+  GROUP_BY_DATE = 'groupByDate',
+  GROUP_BY_PRIORITY = 'groupByPriority'
+}
+
+export enum GroupBy {
+  NONE = 'none',
+  PROJECT = 'project',
+  DATE = 'date',
+  PRIORITY = 'priority'
+}
+
+export enum SortBy {
+  TITLE = 'title',
+  DUE_DATE = 'dueDate',
+  PRIORITY = 'priority',
+  CREATED = 'created'
+}
+
+export enum SortDirection {
+  ASC = 'asc',
+  DESC = 'desc'
+}
+
+export enum DateGroup {
+  TODAY = 'today',
+  TOMORROW = 'tomorrow',
+  THIS_WEEK = 'thisWeek',
+  NEXT_WEEK = 'nextWeek',
+  LATER = 'later',
+  NO_DATE = 'noDate'
 }
 
 export enum FilterOperator {
@@ -45,6 +74,12 @@ interface FilterContextType {
   setViewMode: (mode: ViewMode) => void;
   excludeCompleted: boolean;
   setExcludeCompleted: (exclude: boolean) => void;
+  groupBy: GroupBy;
+  setGroupBy: (groupBy: GroupBy) => void;
+  sortBy: SortBy;
+  setSortBy: (sortBy: SortBy) => void;
+  sortDirection: SortDirection;
+  setSortDirection: (direction: SortDirection) => void;
 }
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
@@ -56,16 +91,25 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.ACTIVE_TASKS);
   const [excludeCompleted, setExcludeCompleted] = useState<boolean>(true);
+  const [groupBy, setGroupBy] = useState<GroupBy>(GroupBy.NONE);
+  const [sortBy, setSortBy] = useState<SortBy>(SortBy.DUE_DATE);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(SortDirection.ASC);
 
   // Load from localStorage on init
   useEffect(() => {
     const storedFilters = localStorage.getItem('quire-filters');
     const storedViewMode = localStorage.getItem('quire-viewmode');
     const storedExcludeCompleted = localStorage.getItem('quire-exclude-completed');
+    const storedGroupBy = localStorage.getItem('quire-groupby');
+    const storedSortBy = localStorage.getItem('quire-sortby');
+    const storedSortDirection = localStorage.getItem('quire-sortdirection');
     
     if (storedFilters) setActiveFilters(JSON.parse(storedFilters));
     if (storedViewMode) setViewMode(storedViewMode as ViewMode);
     if (storedExcludeCompleted) setExcludeCompleted(storedExcludeCompleted === 'true');
+    if (storedGroupBy) setGroupBy(storedGroupBy as GroupBy);
+    if (storedSortBy) setSortBy(storedSortBy as SortBy);
+    if (storedSortDirection) setSortDirection(storedSortDirection as SortDirection);
   }, []);
 
   // Save to localStorage when changes occur
@@ -73,7 +117,10 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     localStorage.setItem('quire-filters', JSON.stringify(activeFilters));
     localStorage.setItem('quire-viewmode', viewMode);
     localStorage.setItem('quire-exclude-completed', String(excludeCompleted));
-  }, [activeFilters, viewMode, excludeCompleted]);
+    localStorage.setItem('quire-groupby', groupBy);
+    localStorage.setItem('quire-sortby', sortBy);
+    localStorage.setItem('quire-sortdirection', sortDirection);
+  }, [activeFilters, viewMode, excludeCompleted, groupBy, sortBy, sortDirection]);
 
   const addFilter = (filter: Omit<Filter, 'id'>) => {
     const newFilter = { ...filter, id: generateId() };
@@ -96,7 +143,13 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     clearFilters,
     setViewMode,
     excludeCompleted,
-    setExcludeCompleted
+    setExcludeCompleted,
+    groupBy,
+    setGroupBy,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

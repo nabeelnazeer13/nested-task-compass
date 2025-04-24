@@ -11,7 +11,8 @@ import {
   FileText,
   Play,
   Square,
-  Timer
+  Timer,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -66,6 +67,17 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
     });
   };
 
+  const handleToggleCompleted = (checked: boolean) => {
+    updateTask({
+      ...task,
+      completed: checked
+    });
+    
+    if (checked) {
+      toast.success(`Task "${task.title}" marked as completed`);
+    }
+  };
+
   const isTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
 
   const handleTimeTrackingAction = () => {
@@ -89,9 +101,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
 
   return (
     <div className="task-container">
-      <div className="flex items-center p-2 task-item">
+      <div className={`flex items-center p-2 task-item ${task.completed ? 'opacity-60' : ''}`}>
         <div className="flex-none mr-2">
-          <Checkbox />
+          <Checkbox 
+            checked={task.completed} 
+            onCheckedChange={handleToggleCompleted}
+          />
         </div>
         
         {task.children.length > 0 && (
@@ -106,13 +121,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
         )}
         
         <div className="flex-grow min-w-0">
-          <div className="flex items-center">
-            <span className="font-medium truncate">{task.title}</span>
+          <div className="flex items-center flex-wrap">
+            <span className={`font-medium truncate ${task.completed ? 'line-through' : ''}`}>
+              {task.title}
+            </span>
             
             {task.dueDate && (
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
                 <Calendar size={12} />
-                {format(task.dueDate, 'MMM d')}
+                {format(new Date(task.dueDate), 'MMM d')}
               </Badge>
             )}
             
@@ -190,6 +207,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleToggleCompleted(!task.completed)}>
+                {task.completed ? (
+                  <>Unmark as Completed</>
+                ) : (
+                  <>Mark as Completed</>
+                )}
+              </DropdownMenuItem>
+              
               <DropdownMenuSeparator />
               
               <DropdownMenuItem onClick={() => handleUpdatePriority('low')}>
