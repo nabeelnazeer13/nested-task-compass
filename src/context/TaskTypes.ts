@@ -64,8 +64,8 @@ export interface TaskContextType {
   addTimeTracking: (timeTracking: Omit<TimeTracking, 'id'>) => void;
   updateTimeTracking: (timeTracking: TimeTracking) => void;
   deleteTimeTracking: (timeTrackingId: string) => void;
-  selectedView: 'projects' | 'list' | 'calendar';
-  setSelectedView: (view: 'projects' | 'list' | 'calendar') => void;
+  selectedView: 'projects' | 'calendar';
+  setSelectedView: (view: 'projects' | 'calendar') => void;
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 }
