@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   DropdownMenu,
@@ -8,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { GroupBy, SortBy, useFilterContext, ViewMode } from '@/context/FilterContext';
-import { ChevronDown, Group, SortAsc, Filter, Checkbox } from 'lucide-react';
+import { ChevronDown, Group, SortAsc, Filter, Check } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Tooltip,
@@ -67,7 +66,7 @@ const ProjectViewOptions = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {renderButton(
-            <Checkbox className="h-4 w-4" />,
+            <Check className="h-4 w-4" />,
             viewMode === ViewMode.ACTIVE_TASKS ? 'Active Tasks' : 'All Tasks',
             'Toggle Active/All Tasks',
           )}
