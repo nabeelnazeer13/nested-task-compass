@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -13,7 +12,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ProjectViewOptions from './ProjectViewOptions';
 import { filterTasks, sortTasks, groupTasks } from '@/utils/task-filters';
 import { priorityColors } from '@/lib/priority-utils';
-
 const ProjectView: React.FC = () => {
   const {
     projects,
@@ -57,7 +55,7 @@ const ProjectView: React.FC = () => {
                 <h3 className="text-lg font-medium">{group.title} ({group.tasks.length})</h3>
                 <ChevronDown size={20} />
               </CollapsibleTrigger>
-              <CollapsibleContent className="px-4 pb-4">
+              <CollapsibleContent className="pb-4 px-0">
                 {group.tasks.length > 0 ? <div className="space-y-2">
                     {group.tasks.map(task => <div key={task.id} className="pl-4">
                         {/* We need to find the parent project for this task */}
