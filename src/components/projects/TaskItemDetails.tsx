@@ -5,53 +5,73 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { priorityColors, priorityLabels } from '@/lib/priority-utils';
+import TrackingHistory from '@/components/time-tracking/TrackingHistory';
+import { useTaskContext } from '@/context/TaskContext';
 
 interface TaskItemDetailsProps {
   task: Task;
 }
 
 const TaskItemDetails: React.FC<TaskItemDetailsProps> = ({ task }) => {
-  const isMobile = useIsMobile();
+  const { timeTrackings, updateTimeTracking, deleteTimeTracking } = useTaskContext();
+  const taskTrackings = timeTrackings.filter(tracking => tracking.taskId === task.id);
   
   return (
-    <div className="flex-grow min-w-0">
-      <div className="flex items-center flex-wrap gap-1">
-        <span className={`font-medium truncate ${task.completed ? 'line-through' : ''}`}>
-          {task.title}
-        </span>
-        
-        {task.dueDate && (
-          <Badge variant="outline" className="text-[10px] md:text-xs flex items-center gap-1 shrink-0">
-            <Calendar size={isMobile ? 10 : 12} />
-            {format(new Date(task.dueDate), 'MMM d')}
-            {task.timeSlot && (
-              <span className="ml-0.5">{task.timeSlot}</span>
-            )}
-          </Badge>
-        )}
-        
-        {!isMobile && (
-          <Badge className={`text-xs ${priorityColors[task.priority]} shrink-0`}>
-            {priorityLabels[task.priority]}
-          </Badge>
-        )}
-        
-        {task.estimatedTime > 0 && (
-          <Badge variant="outline" className="text-[10px] md:text-xs flex items-center gap-1 shrink-0">
-            <Clock size={isMobile ? 10 : 12} />
-            {formatMinutes(task.estimatedTime)}
-          </Badge>
-        )}
-        
-        {task.timeTracked > 0 && (
-          <Badge variant="outline" className="text-[10px] md:text-xs flex items-center gap-1 shrink-0">
-            <Clock size={isMobile ? 10 : 12} />
-            {formatMinutes(task.timeTracked)}
-          </Badge>
+    <div className="space-y-6 pt-8">
+      <div>
+        <h3 className="text-2xl font-semibold mb-2">{task.title}</h3>
+        {task.description && (
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">
+            {task.description}
+          </p>
         )}
       </div>
+
+      <div className="grid gap-4">
+        {/* Due Date */}
+        {task.dueDate && (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}
+              {task.timeSlot && (
+                <span className="ml-1">at {task.timeSlot}</span>
+              )}
+            </Badge>
+          </div>
+        )}
+
+        {/* Time Estimates */}
+        <div className="flex flex-wrap gap-2">
+          {task.estimatedTime > 0 && (
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Estimated: {formatMinutes(task.estimatedTime)}
+            </Badge>
+          )}
+          
+          {task.timeTracked > 0 && (
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Total tracked: {formatMinutes(task.timeTracked)}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Time Tracking History */}
+      {taskTrackings.length > 0 && (
+        <div className="border rounded-md mt-6">
+          <div className="bg-muted/50 p-3 font-medium">
+            <h4>Time Tracking History</h4>
+          </div>
+          <TrackingHistory
+            trackings={taskTrackings}
+            onUpdateTracking={updateTimeTracking}
+            onDeleteTracking={deleteTimeTracking}
+          />
+        </div>
+      )}
     </div>
   );
 };
