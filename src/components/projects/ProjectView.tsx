@@ -62,7 +62,7 @@ const ProjectView: React.FC = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex-none">
-                <FilterButton customTrigger={filterButton} />
+                <FilterButton />
               </div>
             </TooltipTrigger>
             <TooltipContent>
