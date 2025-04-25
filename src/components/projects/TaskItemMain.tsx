@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Task, Priority } from '@/context/TaskTypes';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -8,6 +7,7 @@ import TaskItemDetails from './TaskItemDetails';
 import TaskItemActions from './TaskItemActions';
 import { useTaskContext } from '@/context/TaskContext';
 import { toast } from "sonner";
+import { priorityColors } from '@/lib/priority-utils';
 
 interface TaskItemMainProps {
   task: Task;

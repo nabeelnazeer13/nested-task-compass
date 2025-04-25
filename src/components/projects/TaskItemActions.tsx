@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { priorityColors } from '@/lib/priority-utils';
 
 interface TaskItemActionsProps {
   task: Task;

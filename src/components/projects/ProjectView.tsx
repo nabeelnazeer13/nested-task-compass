@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -11,6 +12,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ProjectViewOptions from './ProjectViewOptions';
 import { filterTasks, sortTasks, groupTasks } from '@/utils/task-filters';
+import { priorityColors } from '@/lib/priority-utils';
+
 const ProjectView: React.FC = () => {
   const {
     projects,

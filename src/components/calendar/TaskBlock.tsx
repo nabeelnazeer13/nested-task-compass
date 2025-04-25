@@ -3,6 +3,7 @@ import React from 'react';
 import { Play, Clock } from 'lucide-react';
 import { Task } from '@/context/TaskTypes';
 import { formatMinutes } from '@/lib/time-utils';
+import { priorityColors } from '@/lib/priority-utils';
 
 interface TaskBlockProps {
   task: Task;
@@ -17,13 +18,23 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
   showTimeSlot = false,
   activeTaskId 
 }) => {
+  // Map the priorityColors class to a calendar-specific styling
+  const getPriorityClass = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 border-l-2 border-red-500';
+      case 'medium':
+        return 'bg-yellow-100 border-l-2 border-yellow-500';
+      case 'low':
+        return 'bg-blue-100 border-l-2 border-blue-500';
+      default:
+        return 'bg-blue-100 border-l-2 border-blue-500';
+    }
+  };
+
   return (
     <div 
-      className={`calendar-task ${
-        task.priority === 'high' ? 'bg-red-100 border-l-2 border-red-500' : 
-        task.priority === 'medium' ? 'bg-yellow-100 border-l-2 border-yellow-500' : 
-        'bg-blue-100 border-l-2 border-blue-500'
-      } p-1 rounded-sm text-xs cursor-pointer`}
+      className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer`}
       onClick={onClick}
       draggable
       onDragStart={(e) => {
