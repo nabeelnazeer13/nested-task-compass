@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Play, Clock } from 'lucide-react';
 import { Task } from '@/context/TaskTypes';
 import { formatMinutes } from '@/lib/time-utils';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { priorityColors } from '@/lib/priority-utils';
 
 interface TaskBlockProps {
@@ -18,7 +19,8 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
   showTimeSlot = false,
   activeTaskId 
 }) => {
-  // Map the priorityColors class to a calendar-specific styling
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
+
   const getPriorityClass = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -32,32 +34,54 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      onClick();
+    }
+    setShowTaskDetails(true);
+  };
+
   return (
-    <div 
-      className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer`}
-      onClick={onClick}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', task.id);
-        e.dataTransfer.effectAllowed = 'move';
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <span className="truncate">{task.title}</span>
-        {showTimeSlot && task.timeSlot && (
-          <span className="text-xs text-muted-foreground ml-1">{task.timeSlot}</span>
-        )}
-        {activeTaskId === task.id && (
-          <Play size={10} className="text-green-600 animate-pulse flex-shrink-0 ml-1" />
+    <>
+      <div 
+        className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer`}
+        onClick={handleClick}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', task.id);
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <span className="truncate">{task.title}</span>
+          {showTimeSlot && task.timeSlot && (
+            <span className="text-xs text-muted-foreground ml-1">{task.timeSlot}</span>
+          )}
+          {activeTaskId === task.id && (
+            <Play size={10} className="text-green-600 animate-pulse flex-shrink-0 ml-1" />
+          )}
+        </div>
+        {task.estimatedTime > 0 && (
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <Clock size={10} />
+            Est: {formatMinutes(task.estimatedTime)}
+          </div>
         )}
       </div>
-      {task.estimatedTime > 0 && (
-        <div className="text-xs text-gray-600 flex items-center gap-1">
-          <Clock size={10} />
-          Est: {formatMinutes(task.estimatedTime)}
-        </div>
-      )}
-    </div>
+
+      <Sheet open={showTaskDetails} onOpenChange={setShowTaskDetails}>
+        <SheetContent>
+          <div className="space-y-4 pt-8">
+            <h3 className="text-lg font-semibold">{task.title}</h3>
+            {task.description && (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {task.description}
+              </p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Task } from '@/context/TaskTypes';
 import { Badge } from '@/components/ui/badge';
@@ -51,12 +52,6 @@ const TaskItemDetails: React.FC<TaskItemDetailsProps> = ({ task }) => {
           </Badge>
         )}
       </div>
-      
-      {!isMobile && task.description && (
-        <p className="text-xs text-muted-foreground mt-1 truncate">
-          {task.description}
-        </p>
-      )}
     </div>
   );
 };
