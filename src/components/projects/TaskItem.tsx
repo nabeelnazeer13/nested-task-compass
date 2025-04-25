@@ -6,11 +6,6 @@ import AddTaskDialog from './AddTaskDialog';
 import TimeTrackingDialog from '@/components/time-tracking/TimeTrackingDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock } from 'lucide-react';
-import { formatMinutes } from '@/lib/time-utils';
-import { priorityColors, priorityLabels } from '@/lib/priority-utils';
 
 interface TaskItemProps {
   task: Task;
@@ -24,11 +19,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const isMobile = useIsMobile();
 
   const handleTaskClick = (e: React.MouseEvent) => {
-    // Don't open details if clicking controls or expand/collapse button
-    if (
-      (e.target as HTMLElement).closest('.task-controls') ||
-      (e.target as HTMLElement).closest('.expand-button')
-    ) {
+    // Only open details if clicking the task container, not its controls
+    if ((e.target as HTMLElement).closest('.task-controls')) {
       return;
     }
     setShowTaskDetails(true);
@@ -73,44 +65,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
         <SheetContent>
           <div className="space-y-4 pt-8">
             <h3 className="text-lg font-semibold">{task.title}</h3>
-            
-            <div className="flex flex-wrap gap-2">
-              <Badge className={priorityColors[task.priority]}>
-                {priorityLabels[task.priority]}
-              </Badge>
-              
-              {task.dueDate && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Calendar size={14} />
-                  {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                  {task.timeSlot && (
-                    <span className="ml-1">{task.timeSlot}</span>
-                  )}
-                </Badge>
-              )}
-
-              {task.estimatedTime > 0 && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Clock size={14} />
-                  Est: {formatMinutes(task.estimatedTime)}
-                </Badge>
-              )}
-
-              {task.timeTracked > 0 && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Clock size={14} />
-                  Tracked: {formatMinutes(task.timeTracked)}
-                </Badge>
-              )}
-            </div>
-
             {task.description && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {task.description}
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {task.description}
+              </p>
             )}
           </div>
         </SheetContent>
