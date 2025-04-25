@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Task } from '@/context/TaskTypes';
 import TaskItemMain from './TaskItemMain';
@@ -6,6 +5,7 @@ import AddTaskDialog from './AddTaskDialog';
 import TimeTrackingDialog from '@/components/time-tracking/TimeTrackingDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import TaskDetailsContent from '@/components/tasks/TaskDetailsContent';
 
 interface TaskItemProps {
   task: Task;
@@ -19,8 +19,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const isMobile = useIsMobile();
 
   const handleTaskClick = (e: React.MouseEvent) => {
-    // Only open details if clicking the task container, not its controls
-    if ((e.target as HTMLElement).closest('.task-controls')) {
+    // Don't open details if clicking the expand button or task controls
+    if (
+      (e.target as HTMLElement).closest('button') || 
+      (e.target as HTMLElement).closest('.task-controls')
+    ) {
       return;
     }
     setShowTaskDetails(true);
@@ -63,14 +66,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
 
       <Sheet open={showTaskDetails} onOpenChange={setShowTaskDetails}>
         <SheetContent>
-          <div className="space-y-4 pt-8">
-            <h3 className="text-lg font-semibold">{task.title}</h3>
-            {task.description && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {task.description}
-              </p>
-            )}
-          </div>
+          <TaskDetailsContent task={task} />
         </SheetContent>
       </Sheet>
     </div>

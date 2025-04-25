@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Play, Clock } from 'lucide-react';
 import { Task } from '@/context/TaskTypes';
 import { formatMinutes } from '@/lib/time-utils';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import TaskDetailsContent from '@/components/tasks/TaskDetailsContent';
 import { priorityColors } from '@/lib/priority-utils';
 
 interface TaskBlockProps {
@@ -71,14 +71,7 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
 
       <Sheet open={showTaskDetails} onOpenChange={setShowTaskDetails}>
         <SheetContent>
-          <div className="space-y-4 pt-8">
-            <h3 className="text-lg font-semibold">{task.title}</h3>
-            {task.description && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {task.description}
-              </p>
-            )}
-          </div>
+          <TaskDetailsContent task={task} />
         </SheetContent>
       </Sheet>
     </>
