@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Task } from '@/context/TaskTypes';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { priorityColors, priorityLabels } from '@/lib/priority-utils';
 
 interface TaskItemDetailsProps {
   task: Task;
