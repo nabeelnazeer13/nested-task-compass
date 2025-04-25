@@ -39,7 +39,7 @@ const AppLayout = () => {
       setSelectedView(value);
     }
   };
-  return <div className="container mx-auto py-2 md:py-6 space-y-4 md:space-y-8 px-2 md:px-6">
+  return <div className="container mx-auto md:py-6 space-y-4 md:space-y-8 md:px-6 px-0 py-[20px]">
       <Tabs defaultValue="projects" value={selectedView} onValueChange={handleTabChange}>
         <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center w-full gap-2 md:gap-4">
@@ -58,7 +58,7 @@ const AppLayout = () => {
             <div className="flex gap-1 md:gap-2">
               <AddTaskFormDialog open={isAddingTask} onOpenChange={setIsAddingTask} triggerElement={<Button size={isMobile ? "sm" : "default"}>
                     <Plus className="h-4 w-4" />
-                    {!isMobile && <span className="ml-2">New Task</span>}
+                    {!isMobile && <span className="ml-2 text-slate-50">New Task</span>}
                   </Button>} />
               <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
                 <DialogTrigger asChild>
