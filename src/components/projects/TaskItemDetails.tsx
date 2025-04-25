@@ -2,69 +2,57 @@
 import React from 'react';
 import { Task } from '@/context/TaskTypes';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, FileText } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TaskItemDetailsProps {
   task: Task;
 }
 
-const priorityColors: Record<string, string> = {
-  high: 'text-task-high',
-  medium: 'text-task-medium',
-  low: 'text-task-low'
-};
-
-const priorityLabels: Record<string, string> = {
-  high: 'High',
-  medium: 'Medium',
-  low: 'Low'
-};
-
 const TaskItemDetails: React.FC<TaskItemDetailsProps> = ({ task }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="flex-grow min-w-0">
-      <div className="flex items-center flex-wrap">
+      <div className="flex items-center flex-wrap gap-1">
         <span className={`font-medium truncate ${task.completed ? 'line-through' : ''}`}>
           {task.title}
         </span>
         
         {task.dueDate && (
-          <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
-            <Calendar size={12} />
+          <Badge variant="outline" className="text-[10px] md:text-xs flex items-center gap-1 shrink-0">
+            <Calendar size={isMobile ? 10 : 12} />
             {format(new Date(task.dueDate), 'MMM d')}
-            {task.timeSlot && <span className="ml-1">{task.timeSlot}</span>}
+            {task.timeSlot && (
+              <span className="ml-0.5">{task.timeSlot}</span>
+            )}
           </Badge>
         )}
         
-        <Badge className={`ml-2 text-xs ${priorityColors[task.priority]}`}>
-          {priorityLabels[task.priority]}
-        </Badge>
+        {!isMobile && (
+          <Badge className={`text-xs ${priorityColors[task.priority]} shrink-0`}>
+            {priorityLabels[task.priority]}
+          </Badge>
+        )}
         
         {task.estimatedTime > 0 && (
-          <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
-            <Clock size={12} />
-            Est: {formatMinutes(task.estimatedTime)}
+          <Badge variant="outline" className="text-[10px] md:text-xs flex items-center gap-1 shrink-0">
+            <Clock size={isMobile ? 10 : 12} />
+            {formatMinutes(task.estimatedTime)}
           </Badge>
         )}
         
         {task.timeTracked > 0 && (
-          <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
-            <Clock size={12} />
-            Tracked: {formatMinutes(task.timeTracked)}
-          </Badge>
-        )}
-        
-        {task.notes && (
-          <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1">
-            <FileText size={12} />
-            Notes
+          <Badge variant="outline" className="text-[10px] md:text-xs flex items-center gap-1 shrink-0">
+            <Clock size={isMobile ? 10 : 12} />
+            {formatMinutes(task.timeTracked)}
           </Badge>
         )}
       </div>
       
-      {task.description && (
+      {!isMobile && task.description && (
         <p className="text-xs text-muted-foreground mt-1 truncate">
           {task.description}
         </p>

@@ -4,6 +4,7 @@ import { Task } from '@/context/TaskTypes';
 import TaskItemMain from './TaskItemMain';
 import AddTaskDialog from './AddTaskDialog';
 import TimeTrackingDialog from '@/components/time-tracking/TimeTrackingDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TaskItemProps {
   task: Task;
@@ -13,9 +14,10 @@ interface TaskItemProps {
 const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [showTimeTrackingDialog, setShowTimeTrackingDialog] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
-    <div className="task-container">
+    <div className={`task-container ${isMobile ? 'py-0.5' : ''}`}>
       <TaskItemMain 
         task={task} 
         level={level}
@@ -23,7 +25,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
       />
       
       {task.isExpanded && task.children.length > 0 && (
-        <div className="task-children">
+        <div className={`task-children ${isMobile ? 'pl-2 ml-0.5' : ''}`}>
           {task.children.map((childTask) => (
             <TaskItem 
               key={childTask.id} 

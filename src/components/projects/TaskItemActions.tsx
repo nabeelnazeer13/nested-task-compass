@@ -65,18 +65,18 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
   };
 
   return (
-    <div className="flex-none flex items-center">
+    <div className="flex-none flex items-center gap-0.5">
       <Button 
         variant={isTracking ? "destructive" : "outline"} 
         size={isMobile ? "icon" : "sm"} 
-        className={isMobile ? "h-7 w-7 p-0 mr-0.5" : "h-8 w-8 p-0 mr-1"}
+        className={isMobile ? "h-7 w-7" : "h-8 w-8"}
         onClick={handleTimeTrackingAction}
       >
         {isTracking ? <Square size={isMobile ? 14 : 16} /> : <Play size={isMobile ? 14 : 16} />}
       </Button>
 
-      {isTracking && (
-        <Badge className={`ml-1 text-xs bg-green-100 text-green-800 animate-pulse ${isMobile ? "hidden" : ""}`}>
+      {isTracking && !isMobile && (
+        <Badge className="ml-1 text-xs bg-green-100 text-green-800 animate-pulse">
           Tracking...
         </Badge>
       )}
@@ -84,7 +84,7 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
       <Button 
         variant="ghost" 
         size={isMobile ? "icon" : "sm"} 
-        className={isMobile ? "h-7 w-7 p-0 mr-0.5" : "h-8 w-8 p-0 mr-1"}
+        className={isMobile ? "h-7 w-7" : "h-8 w-8"}
         onClick={onAddSubtask}
       >
         <Plus size={isMobile ? 14 : 16} />
@@ -95,7 +95,7 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
           <Button 
             variant="ghost" 
             size={isMobile ? "icon" : "sm"} 
-            className={isMobile ? "h-7 w-7 p-0" : "h-8 w-8 p-0"}
+            className={isMobile ? "h-7 w-7" : "h-8 w-8"}
           >
             <MoreHorizontal size={isMobile ? 14 : 16} />
           </Button>
