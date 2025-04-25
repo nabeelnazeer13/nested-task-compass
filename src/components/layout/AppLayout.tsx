@@ -4,19 +4,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProjectView from '@/components/projects/ProjectView';
 import CalendarView from '@/components/calendar/CalendarView';
 import { useTaskContext } from '@/context/TaskContext';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AddTaskFormDialog from '@/components/tasks/AddTaskFormDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AppLayout = () => {
   const { selectedView, setSelectedView, addProject } = useTaskContext();
   const [isAddingProject, setIsAddingProject] = React.useState(false);
   const [isAddingTask, setIsAddingTask] = React.useState(false);
   const [newProject, setNewProject] = React.useState({ name: '', description: '' });
+  const isMobile = useIsMobile();
 
   const handleAddProject = () => {
     if (newProject.name.trim()) {
@@ -33,39 +35,45 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <div className="container mx-auto py-2 md:py-6 space-y-4 md:space-y-8 px-2 md:px-6">
       <Tabs 
         defaultValue="projects" 
         value={selectedView}
         onValueChange={handleTabChange}
       >
         <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center w-full gap-4">
-            <h1 className="text-3xl font-bold mr-4">Quire</h1>
-            <TabsList className="grid grid-cols-2 w-48 shrink-0">
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <div className="flex items-center w-full gap-2 md:gap-4">
+            <h1 className="text-xl md:text-3xl font-bold mr-2 md:mr-4">Quire</h1>
+            <TabsList className="grid grid-cols-2 w-40 md:w-48 shrink-0">
+              <TabsTrigger value="projects" className="flex items-center">
+                <CheckSquare className="h-4 w-4 mr-1 md:mr-2" />
+                <span className={isMobile ? "text-xs" : ""}>Projects</span>
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1 md:mr-2" />
+                <span className={isMobile ? "text-xs" : ""}>Calendar</span>
+              </TabsTrigger>
             </TabsList>
             <span className="flex-1" />
-            <div className="flex gap-2">
+            <div className="flex gap-1 md:gap-2">
               <AddTaskFormDialog 
                 open={isAddingTask}
                 onOpenChange={setIsAddingTask}
                 triggerElement={
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Task
+                  <Button size={isMobile ? "sm" : "default"}>
+                    <Plus className="h-4 w-4" />
+                    {!isMobile && <span className="ml-2">New Task</span>}
                   </Button>
                 }
               />
               <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Project
+                  <Button size={isMobile ? "sm" : "default"}>
+                    <Plus className="h-4 w-4" />
+                    {!isMobile && <span className="ml-2">New Project</span>}
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-[90vw] md:max-w-lg">
                   <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
                   </DialogHeader>
@@ -98,10 +106,10 @@ const AppLayout = () => {
           </div>
         </header>
 
-        <TabsContent value="projects" className="mt-6">
+        <TabsContent value="projects" className="mt-4 md:mt-6">
           <ProjectView />
         </TabsContent>
-        <TabsContent value="calendar" className="mt-6">
+        <TabsContent value="calendar" className="mt-4 md:mt-6">
           <CalendarView />
         </TabsContent>
       </Tabs>

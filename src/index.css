@@ -105,16 +105,16 @@
 }
 
 .task-children {
-  @apply pl-6 border-l border-border ml-2 transition-all duration-200;
+  @apply pl-3 md:pl-6 border-l border-border ml-1 md:ml-2 transition-all duration-200;
 }
 
 /* Calendar Styles */
 .calendar-day {
-  @apply border border-border min-h-24 p-1;
+  @apply border border-border min-h-16 md:min-h-24 p-0.5 md:p-1;
 }
 
 .calendar-task {
-  @apply text-xs p-1 rounded mb-1 truncate cursor-pointer;
+  @apply text-[10px] md:text-xs p-0.5 md:p-1 rounded mb-0.5 md:mb-1 truncate cursor-pointer;
 }
 
 .priority-high {
@@ -131,4 +131,50 @@
 
 .task-completed {
   @apply line-through opacity-50;
+}
+
+/* Mobile Responsive Utilities */
+@media (max-width: 640px) {
+  .container {
+    @apply px-2;
+  }
+}
+
+/* Utility classes for responsive touch targets */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+/* Responsive typography */
+.text-responsive {
+  @apply text-xs md:text-sm;
+}
+
+.heading-responsive {
+  @apply text-lg md:text-2xl;
+}
+
+/* Hidden on mobile only */
+.xs\:inline {
+  @apply hidden;
+}
+
+@media (min-width: 480px) {
+  .xs\:inline {
+    @apply inline;
+  }
+}
+
+/* Animation utilities */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }

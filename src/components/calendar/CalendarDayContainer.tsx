@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { useTaskContext, Task } from '@/context/TaskContext';
@@ -8,6 +9,7 @@ import TaskBlock from './TaskBlock';
 import TimeBlockDisplay from './TimeBlockDisplay';
 import TimeTrackingDisplay from './TimeTrackingDisplay';
 import { findTaskById } from '@/context/TaskHelpers';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CalendarDayContainerProps {
   date: Date;
@@ -49,6 +51,7 @@ const CalendarDayContainer: React.FC<CalendarDayContainerProps> = ({
   const [isAddingTimeBlock, setIsAddingTimeBlock] = useState(false);
   const [draggedOverSlot, setDraggedOverSlot] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const isMobile = useIsMobile();
   
   const allDayTasks = tasks.filter(task => !task.timeSlot);
   const timeSlottedTasks = tasks.filter(task => task.timeSlot).sort((a, b) => 
@@ -167,12 +170,12 @@ const CalendarDayContainer: React.FC<CalendarDayContainerProps> = ({
   if (!oneHourSlots) {
     return (
       <div 
-        className={`calendar-day relative min-h-[150px] border p-2 ${isDragOver ? 'bg-primary/10' : ''}`}
+        className={`calendar-day relative min-h-[120px] md:min-h-[150px] border p-1 md:p-2 ${isDragOver ? 'bg-primary/10' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="space-y-1">
+        <div className="space-y-0.5 md:space-y-1">
           {tasks.map((task) => (
             <TaskBlock
               key={task.id}
@@ -212,9 +215,10 @@ const CalendarDayContainer: React.FC<CalendarDayContainerProps> = ({
   }
 
   const hours = getHourlySlots();
+  const displayHours = isMobile ? hours.filter(h => h >= 6 && h <= 22) : hours;
 
   return (
-    <div className="calendar-day border min-h-[900px] bg-white">
+    <div className="calendar-day border min-h-[600px] md:min-h-[900px] bg-white">
       <AllDaySection 
         tasks={allDayTasks}
         isDragOver={isDragOver}
@@ -226,7 +230,7 @@ const CalendarDayContainer: React.FC<CalendarDayContainerProps> = ({
       />
       
       <TimeSlotGrid 
-        hours={hours}
+        hours={displayHours}
         tasks={timeSlottedTasks}
         timeBlocks={dayTimeBlocks}
         timeTrackings={dayTimeTrackings}

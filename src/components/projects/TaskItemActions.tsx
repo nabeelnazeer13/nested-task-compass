@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TaskItemActionsProps {
   task: Task;
@@ -28,6 +29,7 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
     stopTimeTracking,
   } = useTaskContext();
   
+  const isMobile = useIsMobile();
   const isTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
 
   const handleToggleCompleted = (checked: boolean) => {
@@ -66,35 +68,39 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
     <div className="flex-none flex items-center">
       <Button 
         variant={isTracking ? "destructive" : "outline"} 
-        size="sm" 
-        className="h-8 w-8 p-0 mr-1"
+        size={isMobile ? "icon" : "sm"} 
+        className={isMobile ? "h-7 w-7 p-0 mr-0.5" : "h-8 w-8 p-0 mr-1"}
         onClick={handleTimeTrackingAction}
       >
-        {isTracking ? <Square size={16} /> : <Play size={16} />}
+        {isTracking ? <Square size={isMobile ? 14 : 16} /> : <Play size={isMobile ? 14 : 16} />}
       </Button>
 
       {isTracking && (
-        <Badge className="ml-2 text-xs bg-green-100 text-green-800 animate-pulse">
+        <Badge className={`ml-1 text-xs bg-green-100 text-green-800 animate-pulse ${isMobile ? "hidden" : ""}`}>
           Tracking...
         </Badge>
       )}
       
       <Button 
         variant="ghost" 
-        size="sm" 
-        className="h-8 w-8 p-0 mr-1"
+        size={isMobile ? "icon" : "sm"} 
+        className={isMobile ? "h-7 w-7 p-0 mr-0.5" : "h-8 w-8 p-0 mr-1"}
         onClick={onAddSubtask}
       >
-        <Plus size={16} />
+        <Plus size={isMobile ? 14 : 16} />
       </Button>
       
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <MoreHorizontal size={16} />
+          <Button 
+            variant="ghost" 
+            size={isMobile ? "icon" : "sm"} 
+            className={isMobile ? "h-7 w-7 p-0" : "h-8 w-8 p-0"}
+          >
+            <MoreHorizontal size={isMobile ? 14 : 16} />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="min-w-[160px]">
           <DropdownMenuItem onClick={() => handleToggleCompleted(!task.completed)}>
             {task.completed ? (
               <>Unmark as Completed</>
