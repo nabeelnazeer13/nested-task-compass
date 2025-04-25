@@ -52,7 +52,7 @@ const ProjectView: React.FC = () => {
       {groupBy !== GroupBy.NONE ? <div className="space-y-6">
           {taskGroups.map(group => <Collapsible key={group.id} defaultOpen={true} className="border rounded-md">
               <CollapsibleTrigger className="flex justify-between items-center p-4 w-full hover:bg-muted px-0 py-0">
-                <h3 className="text-lg font-medium">{group.title} ({group.tasks.length})</h3>
+                <h3 className="text-sm text-orange-600 font-bold">{group.title} ({group.tasks.length})</h3>
                 <ChevronDown size={20} />
               </CollapsibleTrigger>
               <CollapsibleContent className="pb-4 px-0">
