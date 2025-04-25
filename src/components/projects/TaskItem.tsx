@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Task } from '@/context/TaskTypes';
 import TaskItemMain from './TaskItemMain';
@@ -65,7 +66,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
       />
 
       <Sheet open={showTaskDetails} onOpenChange={setShowTaskDetails}>
-        <SheetContent>
+        <SheetContent className={isMobile ? "max-h-[95vh] overflow-y-auto pb-16" : ""}>
           <TaskDetailsContent task={task} />
         </SheetContent>
       </Sheet>

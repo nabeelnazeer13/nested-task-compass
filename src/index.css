@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -115,6 +116,32 @@
     [data-radix-popper-content-wrapper] {
       @apply w-screen max-w-[calc(100vw-2rem)] mx-2 !important;
     }
+    
+    /* Mobile Task Styles */
+    .task-item .task-title {
+      @apply text-sm;
+    }
+    
+    /* Dialog height fixes for mobile */
+    .radix-dialog-content {
+      max-height: 85vh !important;
+      overflow-y: auto !important;
+    }
+    
+    /* Add spacing at bottom of dialogs to ensure buttons are visible */
+    .radix-dialog-content form {
+      padding-bottom: 80px !important;
+    }
+    
+    /* Make dialog buttons sticky at bottom */
+    .radix-dialog-content .flex.justify-end {
+      position: sticky !important;
+      bottom: 0 !important;
+      background-color: hsl(var(--background));
+      padding: 0.75rem 0;
+      margin-top: 1rem;
+      border-top: 1px solid hsl(var(--border));
+    }
   }
 }
 
@@ -214,5 +241,40 @@
   
   .mobile-full-width {
     @apply w-full;
+  }
+  
+  /* Reduce task item padding */
+  .task-item {
+    padding-left: 0.25rem !important;
+    margin-left: 0 !important;
+  }
+  
+  /* Add swipe indicator styles */
+  .task-swipe-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(74, 222, 128, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Specific fixes for AddTaskDialog & AddProjectDialog */
+  [role="dialog"] {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  /* Make dialog controls sticky */
+  [role="dialog"] .flex.justify-end {
+    position: sticky;
+    bottom: 0;
+    background-color: hsl(var(--background));
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    z-index: 10;
   }
 }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -8,10 +9,12 @@ import FilterButton from '@/components/filters/FilterButton';
 import FilterPills from '@/components/filters/FilterPills';
 import { GroupBy, useFilterContext } from '@/context/FilterContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ProjectViewOptions from './ProjectViewOptions';
 import { filterTasks, sortTasks, groupTasks } from '@/utils/task-filters';
 import { priorityColors } from '@/lib/priority-utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+
 const ProjectView: React.FC = () => {
   const {
     projects,
@@ -27,6 +30,7 @@ const ProjectView: React.FC = () => {
   const [isAddTaskOpen, setIsAddTaskOpen] = React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
   const [showToolbar, setShowToolbar] = React.useState(false);
+  const isMobile = useIsMobile();
 
   // Filter and sort tasks based on current filters and sort settings
   const filteredTasks = filterTasks(tasks, activeFilters, excludeCompleted);
@@ -38,12 +42,46 @@ const ProjectView: React.FC = () => {
     setSelectedProjectId(projectId);
     setIsAddTaskOpen(true);
   };
+
+  const renderFilterButton = () => {
+    const filterButton = (
+      <Button
+        variant="outline"
+        size={isMobile ? "icon" : "sm"}
+        className={isMobile ? 'h-11 w-11' : ''}
+        aria-label="Filter Tasks"
+      >
+        <Filter className="h-4 w-4" />
+        {!isMobile && "Filter"}
+      </Button>
+    );
+
+    if (isMobile) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex-none">
+                <FilterButton customTrigger={filterButton} />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Filter Tasks</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return <FilterButton />;
+  };
+
   return <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Everything</h2>
         <div className="flex gap-2">
           <ProjectViewOptions />
-          <FilterButton />
+          {renderFilterButton()}
         </div>
       </div>
 
@@ -57,18 +95,18 @@ const ProjectView: React.FC = () => {
               </CollapsibleTrigger>
               <CollapsibleContent className="pb-4 px-0">
                 {group.tasks.length > 0 ? <div className="space-y-2">
-                    {group.tasks.map(task => <div key={task.id} className="pl-4">
+                    {group.tasks.map(task => <div key={task.id} className={`pl-${isMobile ? '1' : '4'}`}>
                         {/* We need to find the parent project for this task */}
                         {React.createElement(ProjectItem, {
-                project: projects.find(p => p.id === task.projectId) || {
-                  id: '',
-                  name: 'Unknown'
-                },
-                hideChildrenInitially: true,
-                showOnlyTasks: [task.id],
-                onAddTask: handleAddTask,
-                listMode: true
-              })}
+                          project: projects.find(p => p.id === task.projectId) || {
+                            id: '',
+                            name: 'Unknown'
+                          },
+                          hideChildrenInitially: true,
+                          showOnlyTasks: [task.id],
+                          onAddTask: handleAddTask,
+                          listMode: true
+                        })}
                       </div>)}
                   </div> : <p className="text-muted-foreground p-4">No tasks in this group</p>}
               </CollapsibleContent>
