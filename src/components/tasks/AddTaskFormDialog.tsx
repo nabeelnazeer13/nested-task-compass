@@ -50,7 +50,6 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
   const [notes, setNotes] = useState('');
   const [estimatedHours, setEstimatedHours] = useState<number | ''>('');
   const [estimatedMinutes, setEstimatedMinutes] = useState<number | ''>('');
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Recurrence states
   const [isRecurring, setIsRecurring] = useState(false);
@@ -172,7 +171,7 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
         
         <div className="space-y-2">
           <Label>Due Date (Optional)</Label>
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+          <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -185,15 +184,13 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
                 {dueDate ? format(dueDate, "PPP") : "Pick a date"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
                 selected={dueDate}
-                onSelect={(date) => {
-                  setDueDate(date);
-                  setIsCalendarOpen(false);
-                }}
+                onSelect={(date) => setDueDate(date)}
                 initialFocus
+                className="p-3 pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
@@ -231,6 +228,15 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
           </div>
         </div>
         
+        <Separator />
+        
+        <RecurrenceSettingsForm
+          enabled={isRecurring}
+          onEnabledChange={setIsRecurring}
+          pattern={recurrencePattern}
+          onPatternChange={setRecurrencePattern}
+        />
+        
         <div className="space-y-2">
           <Label htmlFor="notes">Notes (Optional)</Label>
           <Textarea 
@@ -240,15 +246,6 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
             placeholder="Additional notes"
           />
         </div>
-        
-        <Separator />
-        
-        <RecurrenceSettingsForm
-          enabled={isRecurring}
-          onEnabledChange={setIsRecurring}
-          pattern={recurrencePattern}
-          onPatternChange={setRecurrencePattern}
-        />
         
         <div className="flex justify-end space-x-2 pt-4">
           <DialogClose asChild>

@@ -45,6 +45,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
   
   const [showDetails, setShowDetails] = useState(false);
   const [endType, setEndType] = useState<'never' | 'on' | 'after'>('never');
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     if (pattern) {
@@ -114,6 +115,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
         ...currentPattern,
         endDate: date
       });
+      setCalendarOpen(false);
     }
   };
 
@@ -327,13 +329,16 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="on" id="end-on" />
                     <Label htmlFor="end-on">On date</Label>
-                    {endType === 'on' && (
-                      <Popover>
+                  </div>
+                  
+                  {endType === 'on' && (
+                    <div className="ml-6 mt-2">
+                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              "ml-2 w-[130px] justify-start text-left font-normal",
+                              "w-[130px] justify-start text-left font-normal",
                               !currentPattern.endDate && "text-muted-foreground"
                             )}
                           >
@@ -347,28 +352,30 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                             selected={currentPattern.endDate}
                             onSelect={handleEndDateChange}
                             initialFocus
+                            className="p-3 pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="after" id="end-after" />
                     <Label htmlFor="end-after">After</Label>
-                    {endType === 'after' && (
-                      <div className="flex items-center ml-2">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={currentPattern.occurrences || ''}
-                          onChange={(e) => handleOccurrencesChange(e.target.value)}
-                          className="w-16 h-8"
-                        />
-                        <span className="ml-2">occurrences</span>
-                      </div>
-                    )}
                   </div>
+                  
+                  {endType === 'after' && (
+                    <div className="flex items-center ml-6 mt-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={currentPattern.occurrences || ''}
+                        onChange={(e) => handleOccurrencesChange(e.target.value)}
+                        className="w-16 h-8"
+                      />
+                      <span className="ml-2">occurrences</span>
+                    </div>
+                  )}
                 </RadioGroup>
               </div>
             </div>

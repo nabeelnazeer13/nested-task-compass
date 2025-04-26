@@ -161,16 +161,6 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="task-notes">Notes (optional)</Label>
-            <Textarea 
-              id="task-notes" 
-              value={notes} 
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Enter task notes"
-            />
-          </div>
-          
-          <div className="grid gap-2">
             <Label htmlFor="task-estimatedTime">Estimated Time (minutes, optional)</Label>
             <Input 
               id="task-estimatedTime" 
@@ -182,8 +172,6 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
             />
           </div>
           
-          <Separator />
-          
           {/* Only show recurrence for tasks without a parent */}
           {!parentTaskId && (
             <RecurrenceSettingsForm
@@ -193,6 +181,16 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
               onPatternChange={setRecurrencePattern}
             />
           )}
+          
+          <div className="grid gap-2">
+            <Label htmlFor="task-notes">Notes (optional)</Label>
+            <Textarea 
+              id="task-notes" 
+              value={notes} 
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Enter task notes"
+            />
+          </div>
         </div>
         
         <div className="flex justify-end gap-2">
