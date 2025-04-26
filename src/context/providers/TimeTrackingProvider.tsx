@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ReactNode, TimeTracking } from '../TaskTypes';
+import { ReactNode, TimeTracking, TimeBlock } from '../TaskTypes';
 import { useTimeTrackingActions } from '../hooks/useTimeTrackingActions';
 import { useTimeBlockActions } from '../hooks/useTimeBlockActions';
 import { sampleTimeBlocks } from '../TaskMockData';
@@ -8,7 +7,7 @@ import { useTaskContext } from './TaskContextProvider';
 import { findTaskById, getRootTasks, updateTaskInHierarchy } from '../TaskHelpers';
 
 interface TimeTrackingContextType {
-  timeBlocks: TimeTracking[];
+  timeBlocks: TimeBlock[];
   timeTrackings: TimeTracking[];
   activeTimeTracking: TimeTracking | null;
   startTimeTracking: (taskId: string, notes?: string) => void;
@@ -16,8 +15,8 @@ interface TimeTrackingContextType {
   addTimeTracking: (timeTracking: Omit<TimeTracking, 'id'>) => void;
   updateTimeTracking: (timeTracking: TimeTracking) => void;
   deleteTimeTracking: (timeTrackingId: string) => void;
-  addTimeBlock: (timeBlock: Omit<TimeTracking, 'id'>) => void;
-  updateTimeBlock: (timeBlock: TimeTracking) => void;
+  addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => void;
+  updateTimeBlock: (timeBlock: TimeBlock) => void;
   deleteTimeBlock: (timeBlockId: string) => void;
 }
 
@@ -161,7 +160,7 @@ export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ childr
     return () => clearInterval(intervalId);
   }, [activeTimeTracking]);
 
-  const value = {
+  const value: TimeTrackingContextType = {
     timeBlocks,
     timeTrackings,
     activeTimeTracking,

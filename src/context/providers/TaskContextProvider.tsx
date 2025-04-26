@@ -1,11 +1,24 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Project, Task, TaskContextType, ReactNode } from '../TaskTypes';
+import { Project, Task, ReactNode } from '../TaskTypes';
 import { sampleProjects, sampleTasks } from '../TaskMockData';
 import { useProjectActions } from '../hooks/useProjectActions';
 import { useTaskActions } from '../hooks/useTaskActions';
 
-const TaskContext = createContext<TaskContextType | undefined>(undefined);
+interface TaskContextProviderType {
+  projects: Project[];
+  tasks: Task[];
+  addProject: (project: Omit<Project, 'id' | 'isExpanded'>) => void;
+  updateProject: (project: Project) => void;
+  deleteProject: (projectId: string) => void;
+  toggleProjectExpanded: (projectId: string) => void;
+  addTask: (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => void;
+  updateTask: (task: Task) => void;
+  deleteTask: (taskId: string) => void;
+  toggleTaskExpanded: (taskId: string) => void;
+}
+
+const TaskContext = createContext<TaskContextProviderType | undefined>(undefined);
 
 export const TaskContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
@@ -48,7 +61,7 @@ export const TaskContextProvider: React.FC<{ children: ReactNode }> = ({ childre
   const projectActions = useProjectActions(projects, setProjects);
   const taskActions = useTaskActions(tasks, setTasks, () => tasks);
 
-  const value = {
+  const value: TaskContextProviderType = {
     projects,
     tasks,
     ...projectActions,
