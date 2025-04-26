@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { GroupBy, SortBy, useFilterContext, ViewMode } from '@/context/FilterContext';
-import { ChevronDown, Group, SortAsc, Filter, Check } from 'lucide-react';
+import { ChevronDown, Group, SortAsc, Check } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Tooltip,
@@ -72,7 +72,7 @@ const ProjectViewOptions = () => {
             'Toggle Active/All Tasks',
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className={isMobile ? 'w-screen max-w-[calc(100vw-2rem)] mx-2' : ''}>
+        <DropdownMenuContent align="end" className={isMobile ? 'w-[200px]' : ''}>
           <DropdownMenuItem 
             onClick={() => setViewMode(ViewMode.ACTIVE_TASKS)}
             className={viewMode === ViewMode.ACTIVE_TASKS ? 'bg-accent' : ''}
@@ -97,7 +97,7 @@ const ProjectViewOptions = () => {
             'Group Tasks',
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className={isMobile ? 'w-screen max-w-[calc(100vw-2rem)] mx-2' : ''}>
+        <DropdownMenuContent align="end" className={isMobile ? 'w-[200px]' : ''}>
           <DropdownMenuItem 
             onClick={() => setGroupBy(GroupBy.NONE)}
             className={groupBy === GroupBy.NONE ? 'bg-accent' : ''}
@@ -134,7 +134,7 @@ const ProjectViewOptions = () => {
             'Sort Tasks',
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className={isMobile ? 'w-screen max-w-[calc(100vw-2rem)] mx-2' : ''}>
+        <DropdownMenuContent align="end" className={isMobile ? 'w-[200px]' : ''}>
           <DropdownMenuItem 
             onClick={() => setSortBy(SortBy.DUE_DATE)}
             className={sortBy === SortBy.DUE_DATE ? 'bg-accent' : ''}

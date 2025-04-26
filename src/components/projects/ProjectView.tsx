@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -44,25 +43,21 @@ const ProjectView: React.FC = () => {
   };
 
   const renderFilterButton = () => {
-    const filterButton = (
-      <Button
-        variant="outline"
-        size={isMobile ? "icon" : "sm"}
-        className={isMobile ? 'h-11 w-11' : ''}
-        aria-label="Filter Tasks"
-      >
-        <Filter className="h-4 w-4" />
-        {!isMobile && "Filter"}
-      </Button>
-    );
-
     if (isMobile) {
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex-none">
-                <FilterButton />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11"
+                  aria-label="Filter Tasks"
+                  onClick={() => document.getElementById('filter-button')?.click()}
+                >
+                  <Filter className="h-4 w-4" />
+                </Button>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -94,8 +89,8 @@ const ProjectView: React.FC = () => {
                 <ChevronDown size={20} />
               </CollapsibleTrigger>
               <CollapsibleContent className="pb-4 px-0">
-                {group.tasks.length > 0 ? <div className="space-y-2">
-                    {group.tasks.map(task => <div key={task.id} className={`pl-${isMobile ? '1' : '4'}`}>
+                {group.tasks.length > 0 ? <div className="space-y-1">
+                    {group.tasks.map(task => <div key={task.id} className={`pl-${isMobile ? '0' : '4'}`}>
                         {/* We need to find the parent project for this task */}
                         {React.createElement(ProjectItem, {
                           project: projects.find(p => p.id === task.projectId) || {
@@ -111,7 +106,7 @@ const ProjectView: React.FC = () => {
                   </div> : <p className="text-muted-foreground p-4">No tasks in this group</p>}
               </CollapsibleContent>
             </Collapsible>)}
-        </div> : <div className="space-y-4">
+        </div> : <div className="space-y-2">
           {projects.map(project => <ProjectItem key={project.id} project={project} onAddTask={() => handleAddTask(project.id)} />)}
         </div>}
 

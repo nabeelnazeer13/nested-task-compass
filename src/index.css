@@ -119,7 +119,7 @@
     
     /* Mobile Task Styles */
     .task-item .task-title {
-      @apply text-sm;
+      @apply text-xs;
     }
     
     /* Dialog height fixes for mobile */
@@ -243,10 +243,24 @@
     @apply w-full;
   }
   
-  /* Reduce task item padding */
+  /* Reduce task item padding and spacing */
+  .task-container {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin-bottom: 0;
+  }
+  
   .task-item {
-    padding-left: 0.25rem !important;
+    padding-left: 0 !important;
     margin-left: 0 !important;
+  }
+  
+  /* Ensure dropdown menus are visible on mobile */
+  [data-radix-popper-content-wrapper] {
+    z-index: 50 !important;
+    background-color: hsl(var(--popover));
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
   }
   
   /* Add swipe indicator styles */
@@ -276,5 +290,18 @@
     padding-bottom: 0.5rem;
     margin-top: 0.5rem;
     z-index: 10;
+  }
+  
+  /* Space columns in group view properly */
+  .space-y-6 .space-y-2 {
+    margin-top: 0.25rem;
+  }
+  
+  /* Ensure dropdown content is visible and with proper background */
+  .DropdownMenuContent {
+    z-index: 50;
+    background-color: hsl(var(--popover));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
   }
 }

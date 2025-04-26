@@ -23,6 +23,7 @@ import {
 } from '@/context/FilterContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Priority } from '@/context/TaskContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const FilterButton: React.FC = () => {
   const { 
@@ -39,6 +40,8 @@ const FilterButton: React.FC = () => {
     sortDirection,
     setSortDirection
   } = useFilterContext();
+  
+  const isMobile = useIsMobile();
 
   const handleAddPriorityFilter = (priority: Priority) => {
     addFilter({
@@ -78,18 +81,27 @@ const FilterButton: React.FC = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+      <DropdownMenuTrigger asChild id="filter-button">
+        <Button variant="outline" size="sm" className={isMobile ? "h-11 w-11 p-0" : "gap-2"}>
           <Filter size={16} />
-          <span>Filter</span>
-          {activeFilters.length > 0 && (
-            <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+          {!isMobile && (
+            <>
+              <span>Filter</span>
+              {activeFilters.length > 0 && (
+                <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                  {activeFilters.length}
+                </span>
+              )}
+            </>
+          )}
+          {isMobile && activeFilters.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full h-5 w-5 text-xs flex items-center justify-center">
               {activeFilters.length}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
+      <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel>View Mode</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem 
