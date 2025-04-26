@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RecurrencePattern } from '@/context/TaskTypes';
 import { Label } from '@/components/ui/label';
@@ -169,7 +170,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
               onChange={(e) => {
                 const value = parseInt(e.target.value, 10);
                 if (!isNaN(value) && value > 0 && value <= 31) {
-                  updatePattern({
+                  updatePatternAndNotify({
                     ...localPattern,
                     dayOfMonth: value
                   });
@@ -194,7 +195,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
               <Select
                 value={localPattern.monthOfYear?.toString() || '0'}
                 onValueChange={(value) => {
-                  updatePattern({
+                  updatePatternAndNotify({
                     ...localPattern,
                     monthOfYear: parseInt(value, 10)
                   });
@@ -224,7 +225,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                 onChange={(e) => {
                   const value = parseInt(e.target.value, 10);
                   if (!isNaN(value) && value > 0 && value <= 31) {
-                    updatePattern({
+                    updatePatternAndNotify({
                       ...localPattern,
                       dayOfMonth: value
                     });
@@ -299,7 +300,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                     onChange={(e) => {
                       const value = parseInt(e.target.value, 10);
                       if (!isNaN(value) && value > 0) {
-                        updatePattern({ interval: value });
+                        updatePatternAndNotify({ interval: value });
                       }
                     }}
                     className="w-20"
