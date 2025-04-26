@@ -10,12 +10,6 @@ import { Button } from "@/components/ui/button";
 import { GroupBy, SortBy, useFilterContext, ViewMode } from '@/context/FilterContext';
 import { Group, SortAsc, Check, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
 
 const ProjectViewOptions = () => {
   const { 
@@ -28,7 +22,7 @@ const ProjectViewOptions = () => {
   } = useFilterContext();
   const isMobile = useIsMobile();
 
-  // Separate mobile button rendering without tooltip interference
+  // Separate mobile button rendering
   const renderButton = (icon: React.ReactNode, text: string, isActive?: boolean) => (
     <Button 
       variant="outline" 
@@ -41,24 +35,6 @@ const ProjectViewOptions = () => {
     </Button>
   );
 
-  // Used only for desktop tooltip wrapping
-  const withTooltip = (button: React.ReactNode, tooltip: string) => {
-    if (!isMobile) return button;
-    
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {button}
-          </TooltipTrigger>
-          <TooltipContent sideOffset={10} className="z-[100]">
-            <p>{tooltip}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  };
-
   const dropdownContentClass = isMobile ? 
     'w-[calc(100vw-2rem)] fixed left-4 right-4 top-[calc(var(--header-height)+1rem)] z-[100] bg-popover border shadow-lg rounded-md mt-2' 
     : '';
@@ -67,13 +43,10 @@ const ProjectViewOptions = () => {
     <div className="flex items-center gap-2">
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          {withTooltip(
-            renderButton(
-              <Check className="h-4 w-4" />,
-              viewMode === ViewMode.ACTIVE_TASKS ? 'Active Tasks' : 'All Tasks',
-              false
-            ),
-            'Toggle Active/All Tasks'
+          {renderButton(
+            <Check className="h-4 w-4" />,
+            viewMode === ViewMode.ACTIVE_TASKS ? 'Active Tasks' : 'All Tasks',
+            false
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className={dropdownContentClass}>
@@ -94,13 +67,10 @@ const ProjectViewOptions = () => {
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          {withTooltip(
-            renderButton(
-              <Group className="h-4 w-4" />,
-              'Group by',
-              groupBy !== GroupBy.NONE
-            ),
-            'Group Tasks'
+          {renderButton(
+            <Group className="h-4 w-4" />,
+            'Group by',
+            groupBy !== GroupBy.NONE
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className={dropdownContentClass}>
@@ -133,13 +103,10 @@ const ProjectViewOptions = () => {
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          {withTooltip(
-            renderButton(
-              <SortAsc className="h-4 w-4" />,
-              'Sort by',
-              false
-            ),
-            'Sort Tasks'
+          {renderButton(
+            <SortAsc className="h-4 w-4" />,
+            'Sort by',
+            false
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className={dropdownContentClass}>
