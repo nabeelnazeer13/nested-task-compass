@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Play, Clock } from 'lucide-react';
 import { Task } from '@/context/TaskTypes';
@@ -20,6 +21,14 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
   activeTaskId 
 }) => {
   const [showTaskDetails, setShowTaskDetails] = useState(false);
+
+  const getHeightClass = () => {
+    if (!task.estimatedTime) return 'h-6'; // Default height
+    
+    // Each hour slot is 48px (h-12), so calculate proportional height
+    const heightInPixels = Math.max((task.estimatedTime / 60) * 48, 24); // Minimum 24px height
+    return `h-[${heightInPixels}px]`;
+  };
 
   const getPriorityClass = (priority: string) => {
     switch (priority) {
@@ -44,7 +53,7 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
   return (
     <>
       <div 
-        className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer`}
+        className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer ${getHeightClass()}`}
         onClick={handleClick}
         draggable
         onDragStart={(e) => {

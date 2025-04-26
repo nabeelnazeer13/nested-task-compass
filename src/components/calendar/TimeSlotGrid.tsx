@@ -34,7 +34,7 @@ const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
   activeTimeTrackingTaskId
 }) => {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative">
       {hours.map((hour) => {
         const hourStr = hour.toString().padStart(2, '0') + ':00';
         
@@ -68,7 +68,7 @@ const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
             {draggedOverSlot && draggedOverSlot.startsWith(hourStr) && (
               <div className="absolute inset-0 bg-primary/15 pointer-events-none z-10" />
             )}
-            <div className="ml-9 pr-2 flex flex-col gap-1 py-0.5">
+            <div className="ml-9 pr-2 flex flex-col gap-0.5 py-0.5">
               {hourTasks.map((task) => (
                 <TaskBlock
                   key={task.id}
