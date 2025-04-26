@@ -54,18 +54,15 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Use the existing action hooks with our new state
   const projectActions = useProjectActions(projects, setProjects);
   const taskActions = useTaskActions(tasks, setTasks, () => tasks);
   const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
   const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
 
-  // Load initial data when user is authenticated
   useEffect(() => {
     if (user) {
       loadInitialData();
     } else {
-      // Clear data when user logs out
       setProjects([]);
       setTasks([]);
       setTimeBlocks([]);
@@ -75,7 +72,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   }, [user]);
 
-  // Set up real-time subscriptions
   useEffect(() => {
     if (!user) return;
 
@@ -115,7 +111,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     };
   }, [user]);
 
-  // Functions to load data from Supabase
   const loadInitialData = async () => {
     setLoading(true);
     try {
@@ -150,17 +145,14 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const fetchedTasks = await taskService.getTasks();
       
-      // Process tasks into hierarchy
       const tasksMap = new Map<string, Task>();
       const rootTasks: Task[] = [];
       
-      // First pass: Create a map of all tasks
       fetchedTasks.forEach(task => {
         task.children = [];
         tasksMap.set(task.id, task);
       });
       
-      // Second pass: Build hierarchy
       fetchedTasks.forEach(task => {
         if (task.parentId) {
           const parent = tasksMap.get(task.parentId);
@@ -184,12 +176,10 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const fetchedTimeTrackings = await timeTrackingService.getTimeTrackings();
       
-      // Find active tracking (one without end time)
       const activeTracking = fetchedTimeTrackings.find(tracking => !tracking.endTime);
       if (activeTracking) {
         setActiveTimeTracking(activeTracking);
         
-        // Only keep completed trackings in the list
         setTimeTrackings(fetchedTimeTrackings.filter(tracking => tracking.endTime));
       } else {
         setActiveTimeTracking(null);
@@ -209,7 +199,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  // Enhanced project actions with Supabase integration
   const addProjectDb = async (project: Omit<Project, 'id' | 'isExpanded'>) => {
     try {
       const newProject = await projectService.createProject(project);
@@ -250,16 +239,12 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  // Enhanced task actions with Supabase integration
-  const addTaskDb = async (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => {
+  const addTaskDb = async (task: Omit<Task, "id" | "children" | "isExpanded" | "timeTracked">) => {
     try {
       const newTask = await taskService.createTask(task);
       taskActions.addTask({
-        ...task,
-        id: newTask.id,
-        children: [],
-        isExpanded: true,
-        timeTracked: 0
+        ...newTask,
+        children: []
       });
     } catch (error) {
       console.error('Error adding task:', error);
@@ -299,7 +284,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const updateRecurringTaskDb = async (task: Task, updateMode: 'single' | 'future' | 'all' = 'single') => {
     try {
-      // Implementation will be added in Phase 2
       taskActions.updateRecurringTask(task, updateMode);
     } catch (error) {
       console.error('Error updating recurring task:', error);
@@ -308,14 +292,12 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const deleteRecurringTaskDb = async (taskId: string, deleteMode: 'single' | 'future' | 'all' = 'single') => {
     try {
-      // Implementation will be added in Phase 2
       taskActions.deleteRecurringTask(taskId, deleteMode);
     } catch (error) {
       console.error('Error deleting recurring task:', error);
     }
   };
 
-  // Time tracking actions with Supabase integration
   const startTimeTrackingDb = async (taskId: string, notes?: string) => {
     try {
       if (activeTimeTracking) {
@@ -333,7 +315,7 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       if (activeTimeTracking) {
         await timeTrackingService.stopTimeTracking(activeTimeTracking.id, activeTimeTracking.taskId);
-        await loadTimeTrackings(); // Reload to get updated time trackings
+        await loadTimeTrackings();
         setActiveTimeTracking(null);
       }
     } catch (error) {
@@ -346,7 +328,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
       const newTracking = await timeTrackingService.addManualTimeTracking(timeTracking);
       timeTrackingActions.addTimeTracking(newTracking);
       
-      // Update task time tracked total
       const task = findTaskById(timeTracking.taskId, tasks);
       if (task) {
         const updatedTask = {
@@ -378,7 +359,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  // Time block actions with Supabase integration
   const addTimeBlockDb = async (timeBlock: Omit<TimeBlock, 'id'>) => {
     try {
       const newTimeBlock = await timeBlockService.createTimeBlock(timeBlock);
@@ -406,7 +386,6 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  // Helper function to find a task by ID
   const findTaskById = (taskId: string, taskList: Task[]): Task | undefined => {
     for (const task of taskList) {
       if (task.id === taskId) return task;
@@ -425,25 +404,21 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     timeTrackings,
     activeTimeTracking,
     loading,
-    // Project actions
     addProject: addProjectDb,
     updateProject: updateProjectDb,
     deleteProject: deleteProjectDb,
     toggleProjectExpanded: toggleProjectExpandedDb,
-    // Task actions
     addTask: addTaskDb,
     updateTask: updateTaskDb,
     deleteTask: deleteTaskDb,
     toggleTaskExpanded: toggleTaskExpandedDb,
     updateRecurringTask: updateRecurringTaskDb,
     deleteRecurringTask: deleteRecurringTaskDb,
-    // Time tracking actions
     startTimeTracking: startTimeTrackingDb,
     stopTimeTracking: stopTimeTrackingDb,
     addTimeTracking: addTimeTrackingDb,
     updateTimeTracking: updateTimeTrackingDb,
     deleteTimeTracking: deleteTimeTrackingDb,
-    // Time block actions
     addTimeBlock: addTimeBlockDb,
     updateTimeBlock: updateTimeBlockDb,
     deleteTimeBlock: deleteTimeBlockDb

@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData } from './serviceUtils';
+import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData, getCurrentUserId } from './serviceUtils';
 import { Project } from '@/context/TaskTypes';
 
 /**
@@ -8,6 +7,9 @@ import { Project } from '@/context/TaskTypes';
  */
 export async function getProjects(): Promise<Project[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -32,12 +34,15 @@ export async function getProjects(): Promise<Project[]> {
  */
 export async function createProject(project: Omit<Project, 'id'>): Promise<Project> {
   try {
+    const userId = await getCurrentUserId();
+    
     const { data, error } = await supabase
       .from('projects')
       .insert({
         name: project.name,
         description: project.description,
-        is_expanded: project.isExpanded
+        is_expanded: project.isExpanded,
+        user_id: userId
       })
       .select()
       .single();

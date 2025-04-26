@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData } from './serviceUtils';
+import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData, getCurrentUserId } from './serviceUtils';
 import { Task, RecurrencePattern } from '@/context/TaskTypes';
 
 /**
@@ -8,6 +7,9 @@ import { Task, RecurrencePattern } from '@/context/TaskTypes';
  */
 export async function getTasks(): Promise<Task[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
     const { data, error } = await supabase
       .from('tasks')
       .select('*');
@@ -89,6 +91,8 @@ export async function getTasks(): Promise<Task[]> {
  */
 export async function createTask(task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>): Promise<Task> {
   try {
+    const userId = await getCurrentUserId();
+    
     // First create the task
     const { data, error } = await supabase
       .from('tasks')
@@ -105,7 +109,8 @@ export async function createTask(task: Omit<Task, 'id' | 'children' | 'isExpande
         completed: task.completed || false,
         time_slot: task.timeSlot,
         is_recurring: task.isRecurring || false,
-        is_expanded: true
+        is_expanded: true,
+        user_id: userId
       })
       .select()
       .single();

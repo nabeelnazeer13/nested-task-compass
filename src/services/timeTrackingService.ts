@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData } from './serviceUtils';
+import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData, getCurrentUserId } from './serviceUtils';
 import { TimeTracking } from '@/context/TaskTypes';
 
 /**
@@ -8,6 +7,9 @@ import { TimeTracking } from '@/context/TaskTypes';
  */
 export async function getTimeTrackings(): Promise<TimeTracking[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
     const { data, error } = await supabase
       .from('time_trackings')
       .select('*')
@@ -36,6 +38,7 @@ export async function startTimeTracking(
   notes?: string
 ): Promise<TimeTracking> {
   try {
+    const userId = await getCurrentUserId();
     const startTime = new Date();
     
     const { data, error } = await supabase
@@ -44,7 +47,8 @@ export async function startTimeTracking(
         task_id: taskId,
         start_time: startTime.toISOString(),
         duration: 0,
-        notes
+        notes,
+        user_id: userId
       })
       .select()
       .single();
@@ -126,6 +130,8 @@ export async function addManualTimeTracking(
   tracking: Omit<TimeTracking, 'id'>
 ): Promise<TimeTracking> {
   try {
+    const userId = await getCurrentUserId();
+    
     const { data, error } = await supabase
       .from('time_trackings')
       .insert({
@@ -133,7 +139,8 @@ export async function addManualTimeTracking(
         start_time: tracking.startTime.toISOString(),
         end_time: tracking.endTime?.toISOString(),
         duration: tracking.duration,
-        notes: tracking.notes
+        notes: tracking.notes,
+        user_id: userId
       })
       .select()
       .single();

@@ -42,17 +42,17 @@ export const prepareDatesForSupabase = (data: any): any => {
  * Process data from Supabase, converting timestamps to Date objects
  */
 export const processSupabaseData = <T extends Record<string, any>>(data: T): T => {
-  const processed = { ...data };
+  const processed = { ...data } as T;
   
   // Convert specific timestamp fields to Date objects
   const dateFields = ['due_date', 'end_date', 'date', 'start_time', 'end_time', 'created_at', 'updated_at'];
   
   dateFields.forEach(field => {
-    if (field in processed && processed[field] && typeof processed[field] === 'string') {
+    if (field in processed && processed[field as keyof T] && typeof processed[field as keyof T] === 'string') {
       try {
         // Only convert if it looks like an ISO timestamp
-        if (processed[field].match(/^\d{4}-\d{2}-\d{2}T/)) {
-          processed[field] = new Date(processed[field]);
+        if ((processed[field as keyof T] as string).match(/^\d{4}-\d{2}-\d{2}T/)) {
+          (processed as any)[field] = new Date(processed[field as keyof T] as string);
         }
       } catch (e) {
         console.warn(`Failed to convert ${field} to Date:`, e);
@@ -62,3 +62,15 @@ export const processSupabaseData = <T extends Record<string, any>>(data: T): T =
   
   return processed;
 };
+
+/**
+ * Get the current authenticated user's ID
+ */
+export const getCurrentUserId = async (): Promise<string> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  return user.id;
+};
+
