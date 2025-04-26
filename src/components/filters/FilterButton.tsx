@@ -61,6 +61,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({ forMobile = false }) => {
 
   const handleAddDateFilter = (dateGroup: DateGroup) => {
     const labels: Record<DateGroup, string> = {
+      overdue: 'Overdue',  // Added the missing label for overdue tasks
       today: 'Today',
       tomorrow: 'Tomorrow',
       thisWeek: 'This Week',
