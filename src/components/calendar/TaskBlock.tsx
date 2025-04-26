@@ -22,12 +22,14 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
 }) => {
   const [showTaskDetails, setShowTaskDetails] = useState(false);
 
-  const getHeightClass = () => {
-    if (!task.estimatedTime) return 'h-6'; // Default height
+  // Calculate task block height based on estimated time
+  const getTaskHeight = () => {
+    if (!task.estimatedTime) return 24; // Default minimum height in pixels
     
-    // Each hour slot is 48px (h-12), so calculate proportional height
-    const heightInPixels = Math.max((task.estimatedTime / 60) * 48, 24); // Minimum 24px height
-    return `h-[${heightInPixels}px]`;
+    // Each hour slot is 48px, so calculate proportional height
+    // 1 minute = 48px / 60 = 0.8px
+    const heightInPixels = Math.max((task.estimatedTime * 0.8), 24); // Minimum 24px height
+    return heightInPixels;
   };
 
   const getPriorityClass = (priority: string) => {
@@ -53,7 +55,8 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
   return (
     <>
       <div 
-        className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer ${getHeightClass()}`}
+        className={`calendar-task ${getPriorityClass(task.priority)} p-1 rounded-sm text-xs cursor-pointer`}
+        style={{ height: `${getTaskHeight()}px`, overflow: 'hidden' }}
         onClick={handleClick}
         draggable
         onDragStart={(e) => {

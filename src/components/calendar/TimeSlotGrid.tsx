@@ -54,10 +54,10 @@ const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
         return (
           <div
             key={hour}
-            className={`border-b h-12 group relative transition-all ${
+            className={`border-b relative transition-all ${
               draggedOverSlot && draggedOverSlot.startsWith(hourStr) ? 'bg-primary/15' : ''
             }`}
-            style={{ minHeight: '48px' }}
+            style={{ height: '48px', minHeight: '48px' }} 
             onDragOver={e => onHourSlotDragOver(e, hour)}
             onDragLeave={onHourSlotDragLeave}
             onDrop={e => onHourSlotDrop(e, hour)}
@@ -68,15 +68,20 @@ const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
             {draggedOverSlot && draggedOverSlot.startsWith(hourStr) && (
               <div className="absolute inset-0 bg-primary/15 pointer-events-none z-10" />
             )}
-            <div className="ml-9 pr-2 flex flex-col gap-0.5 py-0.5">
+            <div className="ml-9 pr-2 h-full relative">
               {hourTasks.map((task) => (
-                <TaskBlock
-                  key={task.id}
-                  task={task}
-                  onClick={() => onTaskClick(task)}
-                  showTimeSlot
-                  activeTaskId={activeTimeTrackingTaskId}
-                />
+                <div key={task.id} className="absolute left-0 right-0" style={{
+                  // Position task based on its minute within the hour
+                  top: task.timeSlot ? 
+                    (parseInt(task.timeSlot.split(':')[1]) / 60) * 48 : 0
+                }}>
+                  <TaskBlock
+                    task={task}
+                    onClick={() => onTaskClick(task)}
+                    showTimeSlot
+                    activeTaskId={activeTimeTrackingTaskId}
+                  />
+                </div>
               ))}
               
               {hourBlocks.map((block) => (
