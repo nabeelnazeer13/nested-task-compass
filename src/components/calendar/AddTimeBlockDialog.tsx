@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTaskContext, useTimeTrackingContext, Task } from '@/context/TaskContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -62,9 +63,11 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
       const latestTracking = taskDayTrackings.reduce((latest, current) => {
         if (current.endTime) {
           const currentEnd = new Date(current.endTime);
+          const latestEnd = latest.endTime ? new Date(latest.endTime) : new Date();
           return currentEnd > latestEnd ? current : latest;
         } else {
           const currentEnd = new Date();
+          const latestEnd = latest.endTime ? new Date(latest.endTime) : new Date();
           return currentEnd > latestEnd ? current : latest;
         }
       });

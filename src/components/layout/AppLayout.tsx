@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProjectView from '@/components/projects/ProjectView';
 import CalendarView from '@/components/calendar/CalendarView';
-import { useTaskContext } from '@/context/TaskContext';
+import { useTaskContext, useViewModeContext } from '@/context/TaskContext';
 import { Plus, Calendar, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -11,19 +11,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AddTaskFormDialog from '@/components/tasks/AddTaskFormDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const AppLayout = () => {
-  const {
-    selectedView,
-    setSelectedView,
-    addProject
-  } = useTaskContext();
+  const { addProject } = useTaskContext();
+  const { selectedView, setSelectedView } = useViewModeContext();
+  
   const [isAddingProject, setIsAddingProject] = React.useState(false);
   const [isAddingTask, setIsAddingTask] = React.useState(false);
   const [newProject, setNewProject] = React.useState({
     name: '',
     description: ''
   });
+  
   const isMobile = useIsMobile();
+  
   const handleAddProject = () => {
     if (newProject.name.trim()) {
       addProject(newProject);
@@ -34,11 +35,13 @@ const AppLayout = () => {
       setIsAddingProject(false);
     }
   };
+  
   const handleTabChange = (value: string) => {
     if (value === 'projects' || value === 'calendar') {
       setSelectedView(value);
     }
   };
+  
   return <div className="container mx-auto md:py-6 space-y-4 md:space-y-8 md:px-6 px-0 py-[20px]">
       <Tabs defaultValue="projects" value={selectedView} onValueChange={handleTabChange}>
         <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -105,4 +108,5 @@ const AppLayout = () => {
       </Tabs>
     </div>;
 };
+
 export default AppLayout;
