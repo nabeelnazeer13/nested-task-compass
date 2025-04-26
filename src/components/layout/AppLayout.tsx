@@ -47,7 +47,7 @@ const AppLayout = () => {
             <TabsList className="grid grid-cols-2 w-40 md:w-48 shrink-0">
               <TabsTrigger value="projects" className="flex items-center">
                 <CheckSquare className="h-4 w-4 mr-1 md:mr-2" />
-                <span className={isMobile ? "text-xs" : ""}>Projects</span>
+                <span className={isMobile ? "text-xs" : ""}>All tasks</span>
               </TabsTrigger>
               <TabsTrigger value="calendar" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1 md:mr-2" />
