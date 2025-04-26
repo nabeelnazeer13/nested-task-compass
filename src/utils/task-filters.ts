@@ -1,4 +1,3 @@
-
 import { Task, Priority } from '@/context/TaskTypes';
 import { DateGroup, GroupBy, SortBy, SortDirection, Filter, FilterType, FilterOperator } from '@/context/FilterContext';
 import { isBefore, isToday, isTomorrow, isThisWeek, isAfter, startOfDay, addDays, endOfDay, startOfWeek, endOfWeek, addWeeks } from 'date-fns';
@@ -95,13 +94,15 @@ export const sortTasks = (tasks: Task[], sortBy: SortBy, sortDirection: SortDire
   });
 };
 
-export const getDateGroup = (date: Date | undefined): DateGroup => {
+export const getDateGroup = (date: Date | undefined, completed: boolean = false): DateGroup => {
   if (!date) return DateGroup.NO_DATE;
   
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const nextWeekStart = startOfWeek(addWeeks(today, 1));
   
+  // Check for overdue tasks first
+  if (!completed && isBefore(date, today)) return DateGroup.OVERDUE;
   if (isToday(date)) return DateGroup.TODAY;
   if (isTomorrow(date)) return DateGroup.TOMORROW;
   if (isThisWeek(date) && isAfter(date, tomorrow)) return DateGroup.THIS_WEEK;
@@ -111,6 +112,7 @@ export const getDateGroup = (date: Date | undefined): DateGroup => {
 
 export const groupTasksByDate = (tasks: Task[]): TaskGroup[] => {
   const groups: Record<DateGroup, Task[]> = {
+    [DateGroup.OVERDUE]: [],
     [DateGroup.TODAY]: [],
     [DateGroup.TOMORROW]: [],
     [DateGroup.THIS_WEEK]: [],
@@ -120,11 +122,12 @@ export const groupTasksByDate = (tasks: Task[]): TaskGroup[] => {
   };
   
   tasks.forEach(task => {
-    const dateGroup = getDateGroup(task.dueDate);
+    const dateGroup = getDateGroup(task.dueDate, task.completed);
     groups[dateGroup].push(task);
   });
   
   return [
+    { id: DateGroup.OVERDUE, title: 'Overdue', tasks: groups[DateGroup.OVERDUE] },
     { id: DateGroup.TODAY, title: 'Today', tasks: groups[DateGroup.TODAY] },
     { id: DateGroup.TOMORROW, title: 'Tomorrow', tasks: groups[DateGroup.TOMORROW] },
     { id: DateGroup.THIS_WEEK, title: 'This Week', tasks: groups[DateGroup.THIS_WEEK] },

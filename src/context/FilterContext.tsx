@@ -38,6 +38,7 @@ export enum SortDirection {
 }
 
 export enum DateGroup {
+  OVERDUE = 'overdue',
   TODAY = 'today',
   TOMORROW = 'tomorrow',
   THIS_WEEK = 'thisWeek',
