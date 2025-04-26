@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Task, RecurrencePattern } from "@/context/TaskTypes";
+import { Task, RecurrencePattern, Priority } from "@/context/TaskTypes";
 import { CalendarDays, Clock, Edit2, List, Repeat } from "lucide-react";
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
@@ -236,7 +235,7 @@ export default function TaskDetailsContent({ task }: TaskDetailsContentProps) {
         
         {editingEstimatedTime && (
           <EditableEstimatedTime 
-            estimatedTime={task.estimatedTime} 
+            time={task.estimatedTime} 
             onSave={handleUpdateEstimatedTime}
             onCancel={() => setEditingEstimatedTime(false)}
           />
@@ -251,7 +250,15 @@ export default function TaskDetailsContent({ task }: TaskDetailsContentProps) {
           <List className="h-5 w-5" />
           <h3 className="text-lg font-medium">Time Tracking History</h3>
         </div>
-        <TrackingHistory taskId={task.id} />
+        <TrackingHistory 
+          trackings={taskTimeTrackings} 
+          onUpdateTracking={(updatedTracking) => {
+            // Handle updating time tracking
+          }}
+          onDeleteTracking={(trackingId) => {
+            // Handle deleting time tracking
+          }}
+        />
       </div>
     </div>
   );
