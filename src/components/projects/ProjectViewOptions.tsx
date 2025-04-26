@@ -28,18 +28,17 @@ const ProjectViewOptions = () => {
   } = useFilterContext();
   const isMobile = useIsMobile();
 
-  const renderButton = (
+  const renderDropdownButton = (
     icon: React.ReactNode,
     text: string,
     tooltip: string,
-    className?: string
+    isActive?: boolean
   ) => {
     const buttonContent = (
       <Button 
         variant="outline" 
         size={isMobile ? "icon" : "sm"} 
-        className={`${isMobile ? 'h-11 w-11' : 'gap-2'} ${className || ''}`}
-        aria-label={tooltip}
+        className={`${isMobile ? 'h-11 w-11' : 'gap-2'} ${isActive ? 'bg-accent' : ''}`}
       >
         {icon}
         {!isMobile && text}
@@ -47,18 +46,22 @@ const ProjectViewOptions = () => {
       </Button>
     );
 
-    return isMobile ? (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {buttonContent}
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{tooltip}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ) : buttonContent;
+    if (isMobile) {
+      return (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {buttonContent}
+            </TooltipTrigger>
+            <TooltipContent sideOffset={10}>
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return buttonContent;
   };
 
   return (
@@ -66,13 +69,17 @@ const ProjectViewOptions = () => {
       {/* View Mode Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {renderButton(
+          {renderDropdownButton(
             <Check className="h-4 w-4" />,
             viewMode === ViewMode.ACTIVE_TASKS ? 'Active Tasks' : 'All Tasks',
             'Toggle Active/All Tasks',
+            false
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className={isMobile ? 'w-[200px]' : ''}>
+        <DropdownMenuContent 
+          align="end"
+          className={isMobile ? 'w-[280px] z-50 bg-popover mt-2' : ''}
+        >
           <DropdownMenuItem 
             onClick={() => setViewMode(ViewMode.ACTIVE_TASKS)}
             className={viewMode === ViewMode.ACTIVE_TASKS ? 'bg-accent' : ''}
@@ -91,13 +98,17 @@ const ProjectViewOptions = () => {
       {/* Group By Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {renderButton(
+          {renderDropdownButton(
             <Group className="h-4 w-4" />,
             'Group by',
             'Group Tasks',
+            groupBy !== GroupBy.NONE
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className={isMobile ? 'w-[200px]' : ''}>
+        <DropdownMenuContent 
+          align="end"
+          className={isMobile ? 'w-[280px] z-50 bg-popover mt-2' : ''}
+        >
           <DropdownMenuItem 
             onClick={() => setGroupBy(GroupBy.NONE)}
             className={groupBy === GroupBy.NONE ? 'bg-accent' : ''}
@@ -128,13 +139,17 @@ const ProjectViewOptions = () => {
       {/* Sort By Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {renderButton(
+          {renderDropdownButton(
             <SortAsc className="h-4 w-4" />,
             'Sort by',
             'Sort Tasks',
+            false
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className={isMobile ? 'w-[200px]' : ''}>
+        <DropdownMenuContent 
+          align="end"
+          className={isMobile ? 'w-[280px] z-50 bg-popover mt-2' : ''}
+        >
           <DropdownMenuItem 
             onClick={() => setSortBy(SortBy.DUE_DATE)}
             className={sortBy === SortBy.DUE_DATE ? 'bg-accent' : ''}
