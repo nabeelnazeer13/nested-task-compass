@@ -12,7 +12,6 @@ import ProjectViewOptions from './ProjectViewOptions';
 import { filterTasks, sortTasks, groupTasks } from '@/utils/task-filters';
 import { priorityColors } from '@/lib/priority-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 const ProjectView: React.FC = () => {
   const {
@@ -28,7 +27,6 @@ const ProjectView: React.FC = () => {
   } = useFilterContext();
   const [isAddTaskOpen, setIsAddTaskOpen] = React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
-  const [showToolbar, setShowToolbar] = React.useState(false);
   const isMobile = useIsMobile();
 
   // Filter and sort tasks based on current filters and sort settings
@@ -45,26 +43,15 @@ const ProjectView: React.FC = () => {
   const renderFilterButton = () => {
     if (isMobile) {
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex-none">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-11 w-11"
-                  aria-label="Filter Tasks"
-                  onClick={() => document.getElementById('filter-button')?.click()}
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Filter Tasks</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11"
+          aria-label="Filter Tasks"
+          onClick={() => document.getElementById('filter-button')?.click()}
+        >
+          <Filter className="h-4 w-4" />
+        </Button>
       );
     }
 
@@ -91,7 +78,6 @@ const ProjectView: React.FC = () => {
               <CollapsibleContent className="pb-4 px-0">
                 {group.tasks.length > 0 ? <div className="space-y-1">
                     {group.tasks.map(task => <div key={task.id} className={`pl-${isMobile ? '0' : '4'}`}>
-                        {/* We need to find the parent project for this task */}
                         {React.createElement(ProjectItem, {
                           project: projects.find(p => p.id === task.projectId) || {
                             id: '',
