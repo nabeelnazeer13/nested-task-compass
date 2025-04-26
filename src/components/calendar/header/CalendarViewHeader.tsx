@@ -116,7 +116,7 @@ const CalendarViewHeader: React.FC<CalendarViewHeaderProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => setShowMiniCalendar((v) => !v)}
+              onClick={() => setShowMiniCalendar(!showMiniCalendar)}
               className="ml-1"
               aria-label="Show calendar"
             >
