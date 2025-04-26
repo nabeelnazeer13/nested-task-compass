@@ -40,14 +40,20 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
   const [localPattern, setLocalPattern] = useState<RecurrencePattern>(pattern || defaultPattern);
   const [showDetails, setShowDetails] = useState(false);
   const [endType, setEndType] = useState<'never' | 'on' | 'after'>('never');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const [tempEndDate, setTempEndDate] = useState<Date | undefined>(pattern?.endDate);
+  const [tempOccurrences, setTempOccurrences] = useState<number | undefined>(pattern?.occurrences);
 
   useEffect(() => {
     if (pattern) {
       setLocalPattern(pattern);
       if (pattern.endDate) {
         setEndType('on');
+        setTempEndDate(pattern.endDate);
       } else if (pattern.occurrences) {
         setEndType('after');
+        setTempOccurrences(pattern.occurrences);
       } else {
         setEndType('never');
       }
@@ -56,7 +62,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
     }
   }, [pattern]);
 
-  const updatePattern = (updates: Partial<RecurrencePattern>) => {
+  const updatePatternAndNotify = (updates: Partial<RecurrencePattern>) => {
     const updatedPattern = { ...localPattern, ...updates };
     setLocalPattern(updatedPattern);
     onPatternChange(updatedPattern);
@@ -78,7 +84,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
       delete updated.dayOfMonth;
     }
     
-    updatePattern(updated);
+    updatePatternAndNotify(updated);
   };
 
   const handleToggleDay = (day: number) => {
@@ -87,36 +93,39 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
       ? daysOfWeek.filter(d => d !== day)
       : [...daysOfWeek, day].sort();
       
-    updatePattern({ daysOfWeek: updated });
+    updatePatternAndNotify({ daysOfWeek: updated });
   };
 
   const handleEndTypeChange = (value: 'never' | 'on' | 'after') => {
     setEndType(value);
-    const updates: Partial<RecurrencePattern> = {};
-
+    
+    let updates: Partial<RecurrencePattern> = {};
+    
     delete updates.endDate;
     delete updates.occurrences;
-
-    if (value === 'never') {
-    } else if (value === 'on' && localPattern.endDate) {
-      updates.endDate = localPattern.endDate;
-    } else if (value === 'after' && localPattern.occurrences) {
-      updates.occurrences = localPattern.occurrences;
+    
+    if (value === 'on' && tempEndDate) {
+      updates.endDate = tempEndDate;
+    } else if (value === 'after' && tempOccurrences) {
+      updates.occurrences = tempOccurrences;
     }
-
-    updatePattern(updates);
+    
+    updatePatternAndNotify(updates);
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
     if (date) {
-      updatePattern({ endDate: date });
+      setTempEndDate(date);
+      updatePatternAndNotify({ endDate: date, occurrences: undefined });
     }
+    setIsCalendarOpen(false);
   };
 
   const handleOccurrencesChange = (value: string) => {
     const occurrences = parseInt(value, 10);
     if (!isNaN(occurrences) && occurrences > 0) {
-      updatePattern({ occurrences });
+      setTempOccurrences(occurrences);
+      updatePatternAndNotify({ occurrences, endDate: undefined });
     }
   };
 
@@ -325,23 +334,23 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                   
                   {endType === 'on' && (
                     <div className="ml-6 mt-2">
-                      <Popover>
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-[130px] justify-start text-left font-normal",
-                              !localPattern.endDate && "text-muted-foreground"
+                              "w-[240px] justify-start text-left font-normal",
+                              !tempEndDate && "text-muted-foreground"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {localPattern.endDate ? format(localPattern.endDate, "PPP") : <span>Pick a date</span>}
+                            {tempEndDate ? format(tempEndDate, "PPP") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0 z-[100]" align="start">
                           <Calendar
                             mode="single"
-                            selected={localPattern.endDate}
+                            selected={tempEndDate}
                             onSelect={handleEndDateChange}
                             initialFocus
                             className="p-3 pointer-events-auto"
@@ -361,7 +370,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                       <Input
                         type="number"
                         min="1"
-                        value={localPattern.occurrences || ''}
+                        value={tempOccurrences || ''}
                         onChange={(e) => handleOccurrencesChange(e.target.value)}
                         className="w-20"
                         placeholder="1"
