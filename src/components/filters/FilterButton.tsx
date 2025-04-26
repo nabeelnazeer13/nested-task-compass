@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Filter } from 'lucide-react';
@@ -15,7 +16,8 @@ import {
   FilterType, 
   FilterOperator, 
   ViewMode,
-  DateGroup
+  DateGroup,
+  GroupBy
 } from '@/context/FilterContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Priority } from '@/context/TaskContext';
@@ -33,6 +35,8 @@ const FilterButton: React.FC<FilterButtonProps> = ({ forMobile = false }) => {
     setViewMode, 
     excludeCompleted, 
     setExcludeCompleted,
+    groupBy,
+    setGroupBy
   } = useFilterContext();
   
   const isMobile = useIsMobile();
