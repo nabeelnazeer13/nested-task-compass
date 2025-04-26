@@ -37,16 +37,13 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
   pattern,
   onPatternChange
 }) => {
-  const [currentPattern, setCurrentPattern] = useState<RecurrencePattern>(
-    pattern || defaultPattern
-  );
-  
+  const [localPattern, setLocalPattern] = useState<RecurrencePattern>(pattern || defaultPattern);
   const [showDetails, setShowDetails] = useState(false);
   const [endType, setEndType] = useState<'never' | 'on' | 'after'>('never');
 
   useEffect(() => {
     if (pattern) {
-      setCurrentPattern(pattern);
+      setLocalPattern(pattern);
       if (pattern.endDate) {
         setEndType('on');
       } else if (pattern.occurrences) {
@@ -55,26 +52,18 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
         setEndType('never');
       }
     } else {
-      setCurrentPattern(defaultPattern);
+      setLocalPattern(defaultPattern);
     }
   }, [pattern]);
 
-  useEffect(() => {
-    const updatedPattern = { ...currentPattern };
-    
-    if (endType !== 'on') {
-      delete updatedPattern.endDate;
-    }
-    
-    if (endType !== 'after') {
-      delete updatedPattern.occurrences;
-    }
-    
+  const updatePattern = (updates: Partial<RecurrencePattern>) => {
+    const updatedPattern = { ...localPattern, ...updates };
+    setLocalPattern(updatedPattern);
     onPatternChange(updatedPattern);
-  }, [currentPattern, endType, onPatternChange]);
+  };
 
   const handleFrequencyChange = (frequency: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
-    const updated = { ...currentPattern, frequency };
+    const updated = { ...localPattern, frequency };
     
     if (frequency !== 'weekly') {
       delete updated.daysOfWeek;
@@ -89,47 +78,55 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
       delete updated.dayOfMonth;
     }
     
-    setCurrentPattern(updated);
+    updatePattern(updated);
   };
 
   const handleToggleDay = (day: number) => {
-    const daysOfWeek = currentPattern.daysOfWeek || [];
+    const daysOfWeek = localPattern.daysOfWeek || [];
     const updated = daysOfWeek.includes(day)
       ? daysOfWeek.filter(d => d !== day)
       : [...daysOfWeek, day].sort();
       
-    setCurrentPattern({
-      ...currentPattern,
-      daysOfWeek: updated
-    });
+    updatePattern({ daysOfWeek: updated });
+  };
+
+  const handleEndTypeChange = (value: 'never' | 'on' | 'after') => {
+    setEndType(value);
+    const updates: Partial<RecurrencePattern> = {};
+
+    delete updates.endDate;
+    delete updates.occurrences;
+
+    if (value === 'never') {
+    } else if (value === 'on' && localPattern.endDate) {
+      updates.endDate = localPattern.endDate;
+    } else if (value === 'after' && localPattern.occurrences) {
+      updates.occurrences = localPattern.occurrences;
+    }
+
+    updatePattern(updates);
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
     if (date) {
-      setCurrentPattern({
-        ...currentPattern,
-        endDate: date
-      });
+      updatePattern({ endDate: date });
     }
   };
 
-  const handleOccurrencesChange = (occurrences: string) => {
-    const value = parseInt(occurrences, 10);
-    if (!isNaN(value) && value > 0) {
-      setCurrentPattern({
-        ...currentPattern,
-        occurrences: value
-      });
+  const handleOccurrencesChange = (value: string) => {
+    const occurrences = parseInt(value, 10);
+    if (!isNaN(occurrences) && occurrences > 0) {
+      updatePattern({ occurrences });
     }
   };
 
   const renderFrequencyOptions = () => {
-    const { frequency } = currentPattern;
+    const { frequency } = localPattern;
     
     switch (frequency) {
       case 'weekly':
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const selectedDays = currentPattern.daysOfWeek || [];
+        const selectedDays = localPattern.daysOfWeek || [];
         
         return (
           <div className="mt-4">
@@ -159,12 +156,12 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
               type="number"
               min="1"
               max="31"
-              value={currentPattern.dayOfMonth || ''}
+              value={localPattern.dayOfMonth || ''}
               onChange={(e) => {
                 const value = parseInt(e.target.value, 10);
                 if (!isNaN(value) && value > 0 && value <= 31) {
-                  setCurrentPattern({
-                    ...currentPattern,
+                  updatePattern({
+                    ...localPattern,
                     dayOfMonth: value
                   });
                 }
@@ -186,10 +183,10 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
             <div>
               <Label htmlFor="month-of-year">Month</Label>
               <Select
-                value={currentPattern.monthOfYear?.toString() || '0'}
+                value={localPattern.monthOfYear?.toString() || '0'}
                 onValueChange={(value) => {
-                  setCurrentPattern({
-                    ...currentPattern,
+                  updatePattern({
+                    ...localPattern,
                     monthOfYear: parseInt(value, 10)
                   });
                 }}
@@ -214,12 +211,12 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                 type="number"
                 min="1"
                 max="31"
-                value={currentPattern.dayOfMonth || ''}
+                value={localPattern.dayOfMonth || ''}
                 onChange={(e) => {
                   const value = parseInt(e.target.value, 10);
                   if (!isNaN(value) && value > 0 && value <= 31) {
-                    setCurrentPattern({
-                      ...currentPattern,
+                    updatePattern({
+                      ...localPattern,
                       dayOfMonth: value
                     });
                   }
@@ -257,7 +254,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
             className="w-full flex justify-between"
             onClick={() => setShowDetails(!showDetails)}
           >
-            <span>{formatRecurrencePattern(currentPattern)}</span>
+            <span>{formatRecurrencePattern(localPattern)}</span>
             {showDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </Button>
           
@@ -266,7 +263,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
               <div>
                 <Label htmlFor="frequency">Repeat</Label>
                 <Select
-                  value={currentPattern.frequency}
+                  value={localPattern.frequency}
                   onValueChange={(value) => handleFrequencyChange(value as any)}
                 >
                   <SelectTrigger id="frequency" className="mt-1">
@@ -289,23 +286,20 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                     type="number"
                     min="1"
                     max="999"
-                    value={currentPattern.interval}
+                    value={localPattern.interval}
                     onChange={(e) => {
                       const value = parseInt(e.target.value, 10);
                       if (!isNaN(value) && value > 0) {
-                        setCurrentPattern({
-                          ...currentPattern,
-                          interval: value
-                        });
+                        updatePattern({ interval: value });
                       }
                     }}
                     className="w-20"
                   />
                   <span>
-                    {currentPattern.frequency === 'daily' && 'day(s)'}
-                    {currentPattern.frequency === 'weekly' && 'week(s)'}
-                    {currentPattern.frequency === 'monthly' && 'month(s)'}
-                    {currentPattern.frequency === 'yearly' && 'year(s)'}
+                    {localPattern.frequency === 'daily' && 'day(s)'}
+                    {localPattern.frequency === 'weekly' && 'week(s)'}
+                    {localPattern.frequency === 'monthly' && 'month(s)'}
+                    {localPattern.frequency === 'yearly' && 'year(s)'}
                   </span>
                 </div>
               </div>
@@ -316,7 +310,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                 <Label>Ends</Label>
                 <RadioGroup 
                   value={endType} 
-                  onValueChange={(value) => setEndType(value as any)}
+                  onValueChange={handleEndTypeChange}
                   className="space-y-2"
                 >
                   <div className="flex items-center space-x-2">
@@ -337,17 +331,17 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                             variant="outline"
                             className={cn(
                               "w-[130px] justify-start text-left font-normal",
-                              !currentPattern.endDate && "text-muted-foreground"
+                              !localPattern.endDate && "text-muted-foreground"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {currentPattern.endDate ? format(currentPattern.endDate, "PPP") : <span>Pick a date</span>}
+                            {localPattern.endDate ? format(localPattern.endDate, "PPP") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-50">
+                        <PopoverContent className="w-auto p-0 z-[100]" align="start">
                           <Calendar
                             mode="single"
-                            selected={currentPattern.endDate}
+                            selected={localPattern.endDate}
                             onSelect={handleEndDateChange}
                             initialFocus
                             className="p-3 pointer-events-auto"
@@ -367,7 +361,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                       <Input
                         type="number"
                         min="1"
-                        value={currentPattern.occurrences || ''}
+                        value={localPattern.occurrences || ''}
                         onChange={(e) => handleOccurrencesChange(e.target.value)}
                         className="w-20"
                         placeholder="1"
