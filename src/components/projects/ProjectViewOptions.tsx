@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { GroupBy, SortBy, useFilterContext, ViewMode } from '@/context/FilterContext';
-import { ChevronDown, Group, SortAsc, Check } from 'lucide-react';
+import { Group, SortAsc, Check } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Tooltip,
@@ -28,58 +28,55 @@ const ProjectViewOptions = () => {
   } = useFilterContext();
   const isMobile = useIsMobile();
 
-  const renderDropdownButton = (
-    icon: React.ReactNode,
-    text: string,
-    tooltip: string,
-    isActive?: boolean
-  ) => {
-    const buttonContent = (
-      <Button 
-        variant="outline" 
-        size={isMobile ? "icon" : "sm"} 
-        className={`${isMobile ? 'h-11 w-11' : 'gap-2'} ${isActive ? 'bg-accent' : ''}`}
-      >
-        {icon}
-        {!isMobile && text}
-        {!isMobile && <ChevronDown className="h-4 w-4" />}
-      </Button>
+  // Separate mobile button rendering without tooltip interference
+  const renderButton = (icon: React.ReactNode, text: string, isActive?: boolean) => (
+    <Button 
+      variant="outline" 
+      size={isMobile ? "icon" : "sm"} 
+      className={`${isMobile ? 'h-11 w-11' : 'gap-2'} ${isActive ? 'bg-accent' : ''}`}
+    >
+      {icon}
+      {!isMobile && text}
+      {!isMobile && <ChevronDown className="h-4 w-4" />}
+    </Button>
+  );
+
+  // Used only for desktop tooltip wrapping
+  const withTooltip = (button: React.ReactNode, tooltip: string) => {
+    if (!isMobile) return button;
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {button}
+          </TooltipTrigger>
+          <TooltipContent sideOffset={10} className="z-[100]">
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
-
-    if (isMobile) {
-      return (
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {buttonContent}
-            </TooltipTrigger>
-            <TooltipContent sideOffset={10}>
-              <p>{tooltip}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-
-    return buttonContent;
   };
+
+  const dropdownContentClass = isMobile ? 
+    'w-[calc(100vw-2rem)] fixed left-4 right-4 top-[calc(var(--header-height)+1rem)] z-[100] bg-popover border shadow-lg rounded-md mt-2' 
+    : '';
 
   return (
     <div className="flex items-center gap-2">
-      {/* View Mode Dropdown */}
-      <DropdownMenu>
+      <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          {renderDropdownButton(
-            <Check className="h-4 w-4" />,
-            viewMode === ViewMode.ACTIVE_TASKS ? 'Active Tasks' : 'All Tasks',
-            'Toggle Active/All Tasks',
-            false
+          {withTooltip(
+            renderButton(
+              <Check className="h-4 w-4" />,
+              viewMode === ViewMode.ACTIVE_TASKS ? 'Active Tasks' : 'All Tasks',
+              false
+            ),
+            'Toggle Active/All Tasks'
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end"
-          className={isMobile ? 'w-[280px] z-50 bg-popover mt-2' : ''}
-        >
+        <DropdownMenuContent align="end" className={dropdownContentClass}>
           <DropdownMenuItem 
             onClick={() => setViewMode(ViewMode.ACTIVE_TASKS)}
             className={viewMode === ViewMode.ACTIVE_TASKS ? 'bg-accent' : ''}
@@ -95,20 +92,18 @@ const ProjectViewOptions = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Group By Dropdown */}
-      <DropdownMenu>
+      <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          {renderDropdownButton(
-            <Group className="h-4 w-4" />,
-            'Group by',
-            'Group Tasks',
-            groupBy !== GroupBy.NONE
+          {withTooltip(
+            renderButton(
+              <Group className="h-4 w-4" />,
+              'Group by',
+              groupBy !== GroupBy.NONE
+            ),
+            'Group Tasks'
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end"
-          className={isMobile ? 'w-[280px] z-50 bg-popover mt-2' : ''}
-        >
+        <DropdownMenuContent align="end" className={dropdownContentClass}>
           <DropdownMenuItem 
             onClick={() => setGroupBy(GroupBy.NONE)}
             className={groupBy === GroupBy.NONE ? 'bg-accent' : ''}
@@ -136,20 +131,18 @@ const ProjectViewOptions = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Sort By Dropdown */}
-      <DropdownMenu>
+      <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          {renderDropdownButton(
-            <SortAsc className="h-4 w-4" />,
-            'Sort by',
-            'Sort Tasks',
-            false
+          {withTooltip(
+            renderButton(
+              <SortAsc className="h-4 w-4" />,
+              'Sort by',
+              false
+            ),
+            'Sort Tasks'
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end"
-          className={isMobile ? 'w-[280px] z-50 bg-popover mt-2' : ''}
-        >
+        <DropdownMenuContent align="end" className={dropdownContentClass}>
           <DropdownMenuItem 
             onClick={() => setSortBy(SortBy.DUE_DATE)}
             className={sortBy === SortBy.DUE_DATE ? 'bg-accent' : ''}
