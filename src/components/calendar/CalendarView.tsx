@@ -6,6 +6,7 @@ import { isSameDay, format } from 'date-fns';
 import FilterPills from '@/components/filters/FilterPills';
 import { useFilterContext, FilterType } from '@/context/FilterContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { generateRecurringTaskInstances } from '@/lib/recurrence-utils';
 
 import CalendarGrid from './grid/CalendarGrid';
 import TaskList from './tasks/TaskList';
@@ -43,8 +44,38 @@ const CalendarView: React.FC = () => {
     };
   }, [tasks]);
   
+  // Generate recurring task instances
+  const getExpandedTasks = () => {
+    const regularTasks = [...tasks];
+    const recurringTaskTemplates = tasks.filter(task => task.isRecurring && task.recurrencePattern && task.dueDate);
+    
+    let recurringInstances: Task[] = [];
+    
+    if (daysToDisplay.length > 0) {
+      // Get the range for recurring task generation - add some buffer days
+      const firstDay = new Date(daysToDisplay[0]);
+      firstDay.setDate(firstDay.getDate() - 7); // Buffer before
+      
+      const lastDay = new Date(daysToDisplay[daysToDisplay.length - 1]);
+      lastDay.setDate(lastDay.getDate() + 7); // Buffer after
+      
+      // Generate instances for each recurring task template
+      recurringTaskTemplates.forEach(template => {
+        if (template.dueDate && template.recurrencePattern) {
+          const instances = generateRecurringTaskInstances(template, firstDay, lastDay);
+          recurringInstances = [...recurringInstances, ...instances];
+        }
+      });
+    }
+    
+    // Combine regular tasks with generated instances
+    return [...regularTasks, ...recurringInstances];
+  };
+  
   const getUndatedTasks = () => {
-    let filteredTasks = [...tasks];
+    let expandedTasks = getExpandedTasks();
+    let filteredTasks = [...expandedTasks.filter(task => !task.recurrenceParentId)]; // Show only original non-recurring tasks
+    
     activeFilters.forEach(filter => {
       switch (filter.type) {
         case FilterType.PRIORITY:
@@ -55,11 +86,14 @@ const CalendarView: React.FC = () => {
           break;
       }
     });
+    
     return filteredTasks.filter(task => !task.dueDate);
   };
 
   const getTasksForDate = (date: Date) => {
-    let filteredTasks = [...tasks];
+    let expandedTasks = getExpandedTasks();
+    let filteredTasks = [...expandedTasks];
+    
     activeFilters.forEach(filter => {
       switch (filter.type) {
         case FilterType.PRIORITY:
@@ -70,20 +104,48 @@ const CalendarView: React.FC = () => {
           break;
       }
     });
+    
     return filteredTasks.filter(task => task.dueDate && isSameDay(task.dueDate, date));
   };
 
   const handleTaskDrop = (task: Task, date: Date, timeSlot?: string) => {
     try {
-      const updatedTask = {
-        ...task,
-        dueDate: date,
-        timeSlot: timeSlot || undefined
-      };
-      
-      updateTask(updatedTask);
-      const timeInfo = timeSlot ? ` at ${timeSlot}` : '';
-      toast.success(`Task "${task.title}" moved to ${format(date, 'MMM d, yyyy')}${timeInfo}`);
+      // If this is a recurring instance, handle it differently
+      if (task.recurrenceParentId) {
+        const updatedTask = {
+          ...task,
+          dueDate: date,
+          timeSlot: timeSlot || undefined,
+          recurrenceParentId: undefined // Detach from recurrence
+        };
+        
+        // Add the date to exceptions in the parent task
+        const originalTask = tasks.find(t => t.id === task.recurrenceParentId);
+        if (originalTask && originalTask.isRecurring && task.dueDate) {
+          updateTask({
+            ...originalTask,
+            recurrenceExceptions: [
+              ...(originalTask.recurrenceExceptions || []),
+              task.dueDate
+            ]
+          });
+        }
+        
+        // Add as a regular task
+        updateTask(updatedTask);
+        toast.success(`Recurring task "${task.title}" moved to ${format(date, 'MMM d, yyyy')}${timeSlot ? ` at ${timeSlot}` : ''} and detached from recurrence`);
+      } else {
+        // Regular task update
+        const updatedTask = {
+          ...task,
+          dueDate: date,
+          timeSlot: timeSlot || undefined
+        };
+        
+        updateTask(updatedTask);
+        const timeInfo = timeSlot ? ` at ${timeSlot}` : '';
+        toast.success(`Task "${task.title}" moved to ${format(date, 'MMM d, yyyy')}${timeInfo}`);
+      }
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task date');

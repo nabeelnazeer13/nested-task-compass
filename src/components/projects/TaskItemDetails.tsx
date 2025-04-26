@@ -2,7 +2,7 @@
 import React from 'react';
 import { Task } from '@/context/TaskTypes';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,6 +20,9 @@ const TaskItemDetails: React.FC<TaskItemDetailsProps> = ({ task }) => {
       <div className="flex items-center flex-wrap gap-1">
         <span className={`font-medium truncate ${task.completed ? 'line-through' : ''}`}>
           {task.title}
+          {(task.isRecurring || task.recurrenceParentId) && (
+            <Repeat size={isMobile ? 10 : 12} className="inline-block ml-0.5 text-primary" />
+          )}
         </span>
         
         {task.dueDate && (

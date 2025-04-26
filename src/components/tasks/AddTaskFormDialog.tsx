@@ -22,9 +22,12 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { CalendarIcon, Clock, Repeat } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import RecurrenceSettingsForm from './RecurrenceSettingsForm';
+import { RecurrencePattern } from '@/context/TaskTypes';
+import { Separator } from '../ui/separator';
 
 interface AddTaskFormDialogProps {
   open?: boolean;
@@ -48,6 +51,13 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
   const [estimatedHours, setEstimatedHours] = useState<number | ''>('');
   const [estimatedMinutes, setEstimatedMinutes] = useState<number | ''>('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Recurrence states
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>({
+    frequency: 'daily',
+    interval: 1
+  });
 
   const resetForm = () => {
     setTitle('');
@@ -58,6 +68,11 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
     setNotes('');
     setEstimatedHours('');
     setEstimatedMinutes('');
+    setIsRecurring(false);
+    setRecurrencePattern({
+      frequency: 'daily',
+      interval: 1
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,7 +92,9 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
       projectId,
       dueDate,
       notes,
-      estimatedTime: totalMinutes > 0 ? totalMinutes : undefined
+      estimatedTime: totalMinutes > 0 ? totalMinutes : undefined,
+      isRecurring: isRecurring,
+      recurrencePattern: isRecurring ? recurrencePattern : undefined
     });
     
     resetForm();
@@ -91,7 +108,7 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
   };
 
   const dialogContent = (
-    <DialogContent className="sm:max-w-[425px]">
+    <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Add New Task</DialogTitle>
       </DialogHeader>
@@ -183,16 +200,6 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="notes">Notes (Optional)</Label>
-          <Textarea 
-            id="notes" 
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional notes"
-          />
-        </div>
-        
-        <div className="space-y-2">
           <Label>Estimated Time (Optional)</Label>
           <div className="flex items-center gap-2">
             <div className="flex-1">
@@ -223,6 +230,25 @@ const AddTaskFormDialog: React.FC<AddTaskFormDialogProps> = ({
             <Clock className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes (Optional)</Label>
+          <Textarea 
+            id="notes" 
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Additional notes"
+          />
+        </div>
+        
+        <Separator />
+        
+        <RecurrenceSettingsForm
+          enabled={isRecurring}
+          onEnabledChange={setIsRecurring}
+          pattern={recurrencePattern}
+          onPatternChange={setRecurrencePattern}
+        />
         
         <div className="flex justify-end space-x-2 pt-4">
           <DialogClose asChild>

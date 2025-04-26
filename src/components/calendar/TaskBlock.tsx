@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { Play, Clock } from 'lucide-react';
+import { Play, Clock, Repeat } from 'lucide-react';
 import { Task } from '@/context/TaskTypes';
 import { formatMinutes } from '@/lib/time-utils';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import TaskDetailsContent from '@/components/tasks/TaskDetailsContent';
-import { priorityColors } from '@/lib/priority-utils';
+import { getPriorityColor } from '@/lib/priority-utils';
 
 interface TaskBlockProps {
   task: Task;
@@ -65,7 +65,12 @@ const TaskBlock: React.FC<TaskBlockProps> = ({
         }}
       >
         <div className="flex items-center justify-between">
-          <span className="truncate">{task.title}</span>
+          <span className="truncate">
+            {task.title}
+            {task.isRecurring || task.recurrenceParentId ? (
+              <Repeat size={10} className="inline-block ml-1 text-primary" />
+            ) : null}
+          </span>
           {showTimeSlot && task.timeSlot && (
             <span className="text-xs text-muted-foreground ml-1">{task.timeSlot}</span>
           )}

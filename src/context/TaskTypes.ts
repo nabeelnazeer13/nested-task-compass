@@ -3,6 +3,16 @@ import React, { ReactNode } from 'react';
 
 export type Priority = 'low' | 'medium' | 'high';
 
+export interface RecurrencePattern {
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number; // Every X days/weeks/months/years
+  daysOfWeek?: number[]; // For weekly: 0 (Sunday) to 6 (Saturday)
+  dayOfMonth?: number; // For monthly
+  monthOfYear?: number; // For yearly
+  endDate?: Date; // Optional end date
+  occurrences?: number; // Optional number of occurrences
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -18,6 +28,10 @@ export interface Task {
   timeTracked: number;
   completed?: boolean;
   timeSlot?: string; // Format: "HH:MM" - specific time for the task on its due date
+  isRecurring?: boolean;
+  recurrencePattern?: RecurrencePattern;
+  recurrenceParentId?: string; // For generated recurring task instances
+  recurrenceExceptions?: Date[]; // Dates where the recurring task is skipped
 }
 
 export interface TimeTracking {

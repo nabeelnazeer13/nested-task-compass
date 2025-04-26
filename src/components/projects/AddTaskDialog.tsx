@@ -12,6 +12,9 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import RecurrenceSettingsForm from '@/components/tasks/RecurrenceSettingsForm';
+import { RecurrencePattern } from '@/context/TaskTypes';
 
 interface AddTaskDialogProps {
   open: boolean;
@@ -34,6 +37,13 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const [priority, setPriority] = useState<Priority>('medium');
   const [notes, setNotes] = useState('');
   const [estimatedTime, setEstimatedTime] = useState<number | undefined>(undefined);
+  
+  // Recurrence states
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>({
+    frequency: 'daily',
+    interval: 1
+  });
 
   const handleAddTask = () => {
     if (title.trim()) {
@@ -45,7 +55,9 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
         projectId,
         parentId: parentTaskId,
         notes,
-        estimatedTime
+        estimatedTime,
+        isRecurring,
+        recurrencePattern: isRecurring ? recurrencePattern : undefined
       });
       
       // Clear form
@@ -55,6 +67,11 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       setPriority('medium');
       setNotes('');
       setEstimatedTime(undefined);
+      setIsRecurring(false);
+      setRecurrencePattern({
+        frequency: 'daily',
+        interval: 1
+      });
       
       // Close dialog
       onOpenChange(false);
@@ -63,7 +80,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{parentTaskId ? 'Add Subtask' : 'Add Task'}</DialogTitle>
         </DialogHeader>
@@ -164,6 +181,18 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
               placeholder="Estimated time in minutes"
             />
           </div>
+          
+          <Separator />
+          
+          {/* Only show recurrence for tasks without a parent */}
+          {!parentTaskId && (
+            <RecurrenceSettingsForm
+              enabled={isRecurring}
+              onEnabledChange={setIsRecurring}
+              pattern={recurrencePattern}
+              onPatternChange={setRecurrencePattern}
+            />
+          )}
         </div>
         
         <div className="flex justify-end gap-2">
