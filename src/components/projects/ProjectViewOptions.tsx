@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { GroupBy, SortBy, useFilterContext, ViewMode } from '@/context/FilterContext';
-import { Group, SortAsc, Check } from 'lucide-react';
+import { Group, SortAsc, Check, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Tooltip,
