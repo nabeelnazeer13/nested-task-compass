@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, SlidersHorizontal } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -16,16 +15,17 @@ import {
   FilterType, 
   FilterOperator, 
   ViewMode,
-  GroupBy,
-  SortBy,
-  SortDirection,
   DateGroup
 } from '@/context/FilterContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Priority } from '@/context/TaskContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const FilterButton: React.FC = () => {
+interface FilterButtonProps {
+  forMobile?: boolean;
+}
+
+const FilterButton: React.FC<FilterButtonProps> = ({ forMobile = false }) => {
   const { 
     activeFilters, 
     addFilter, 
@@ -33,12 +33,6 @@ const FilterButton: React.FC = () => {
     setViewMode, 
     excludeCompleted, 
     setExcludeCompleted,
-    groupBy,
-    setGroupBy,
-    sortBy,
-    setSortBy,
-    sortDirection,
-    setSortDirection
   } = useFilterContext();
   
   const isMobile = useIsMobile();
@@ -79,12 +73,20 @@ const FilterButton: React.FC = () => {
     });
   };
 
+  const dropdownContentClass = isMobile || forMobile ? 
+    'w-[calc(100vw-2rem)] fixed left-4 right-4 top-[calc(var(--header-height)+1rem)] z-[100] bg-popover border shadow-lg rounded-md mt-2' 
+    : '';
+
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={true}>
       <DropdownMenuTrigger asChild id="filter-button">
-        <Button variant="outline" size="sm" className={isMobile ? "h-11 w-11 p-0" : "gap-2"}>
+        <Button 
+          variant="outline" 
+          size={forMobile ? "icon" : "sm"} 
+          className={forMobile ? "h-11 w-11 p-0" : "gap-2"}
+        >
           <Filter size={16} />
-          {!isMobile && (
+          {!forMobile && (
             <>
               <span>Filter</span>
               {activeFilters.length > 0 && (
@@ -94,14 +96,14 @@ const FilterButton: React.FC = () => {
               )}
             </>
           )}
-          {isMobile && activeFilters.length > 0 && (
+          {forMobile && activeFilters.length > 0 && (
             <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full h-5 w-5 text-xs flex items-center justify-center">
               {activeFilters.length}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end">
+      <DropdownMenuContent className={dropdownContentClass} align="end" sideOffset={8}>
         <DropdownMenuLabel>View Mode</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem 

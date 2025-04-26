@@ -1,17 +1,15 @@
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter } from 'lucide-react';
-import AddTaskDialog from './AddTaskDialog';
-import FilterButton from '@/components/filters/FilterButton';
-import FilterPills from '@/components/filters/FilterPills';
 import { GroupBy, useFilterContext } from '@/context/FilterContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import ProjectViewOptions from './ProjectViewOptions';
+import FilterButton from '@/components/filters/FilterButton';
+import FilterPills from '@/components/filters/FilterPills';
+import { ChevronDown } from 'lucide-react';
 import { filterTasks, sortTasks, groupTasks } from '@/utils/task-filters';
-import { priorityColors } from '@/lib/priority-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AddTaskDialog from './AddTaskDialog';
 
 const ProjectView: React.FC = () => {
   const {
@@ -29,11 +27,9 @@ const ProjectView: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  // Filter and sort tasks based on current filters and sort settings
   const filteredTasks = filterTasks(tasks, activeFilters, excludeCompleted);
   const sortedTasks = sortTasks(filteredTasks, sortBy, sortDirection);
 
-  // Group tasks based on the current grouping setting
   const taskGroups = groupTasks(sortedTasks, groupBy, projects);
   const handleAddTask = (projectId: string) => {
     setSelectedProjectId(projectId);
@@ -42,19 +38,8 @@ const ProjectView: React.FC = () => {
 
   const renderFilterButton = () => {
     if (isMobile) {
-      return (
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-11 w-11"
-          aria-label="Filter Tasks"
-          onClick={() => document.getElementById('filter-button')?.click()}
-        >
-          <Filter className="h-4 w-4" />
-        </Button>
-      );
+      return <FilterButton forMobile />;
     }
-
     return <FilterButton />;
   };
 
@@ -103,4 +88,5 @@ const ProjectView: React.FC = () => {
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen} projectId={selectedProjectId || ''} />
     </div>;
 };
+
 export default ProjectView;
