@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RecurrencePattern } from '@/context/TaskTypes';
 import { Label } from '@/components/ui/label';
@@ -18,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import { formatRecurrencePattern } from '@/lib/recurrence-utils';
 
 interface RecurrenceSettingsFormProps {
@@ -45,7 +43,6 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
   
   const [showDetails, setShowDetails] = useState(false);
   const [endType, setEndType] = useState<'never' | 'on' | 'after'>('never');
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     if (pattern) {
@@ -63,7 +60,6 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
   }, [pattern]);
 
   useEffect(() => {
-    // Remove end properties based on endType
     const updatedPattern = { ...currentPattern };
     
     if (endType !== 'on') {
@@ -80,7 +76,6 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
   const handleFrequencyChange = (frequency: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
     const updated = { ...currentPattern, frequency };
     
-    // Reset frequency-specific options when changing frequency
     if (frequency !== 'weekly') {
       delete updated.daysOfWeek;
     }
@@ -115,7 +110,6 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
         ...currentPattern,
         endDate: date
       });
-      setCalendarOpen(false);
     }
   };
 
@@ -320,7 +314,11 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
               
               <div className="space-y-3">
                 <Label>Ends</Label>
-                <RadioGroup value={endType} onValueChange={(value) => setEndType(value as any)}>
+                <RadioGroup 
+                  value={endType} 
+                  onValueChange={(value) => setEndType(value as any)}
+                  className="space-y-2"
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="never" id="end-never" />
                     <Label htmlFor="end-never">Never</Label>
@@ -333,7 +331,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                   
                   {endType === 'on' && (
                     <div className="ml-6 mt-2">
-                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -346,7 +344,7 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                             {currentPattern.endDate ? format(currentPattern.endDate, "PPP") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
+                        <PopoverContent className="w-auto p-0 z-50">
                           <Calendar
                             mode="single"
                             selected={currentPattern.endDate}
@@ -365,15 +363,16 @@ const RecurrenceSettingsForm: React.FC<RecurrenceSettingsFormProps> = ({
                   </div>
                   
                   {endType === 'after' && (
-                    <div className="flex items-center ml-6 mt-2">
+                    <div className="flex items-center ml-6 mt-2 space-x-2">
                       <Input
                         type="number"
                         min="1"
                         value={currentPattern.occurrences || ''}
                         onChange={(e) => handleOccurrencesChange(e.target.value)}
-                        className="w-16 h-8"
+                        className="w-20"
+                        placeholder="1"
                       />
-                      <span className="ml-2">occurrences</span>
+                      <span>occurrences</span>
                     </div>
                   )}
                 </RadioGroup>
