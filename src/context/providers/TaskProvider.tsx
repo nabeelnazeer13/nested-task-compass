@@ -14,4 +14,3 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </TimeTrackingProvider>
   </TaskContextProvider>
 );
-

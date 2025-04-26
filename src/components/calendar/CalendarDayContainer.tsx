@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { useTaskContext, Task } from '@/context/TaskContext';
+import { useTaskContext, useTimeTrackingContext, Task } from '@/context/TaskContext';
 import AddTimeBlockDialog from './AddTimeBlockDialog';
 import AllDaySection from './AllDaySection';
 import TimeSlotGrid from './TimeSlotGrid';
@@ -46,7 +46,7 @@ const CalendarDayContainer: React.FC<CalendarDayContainerProps> = ({
   onTaskDrop, 
   oneHourSlots 
 }) => {
-  const { timeBlocks, timeTrackings, activeTimeTracking } = useTaskContext();
+  const { timeBlocks, timeTrackings, activeTimeTracking } = useTimeTrackingContext();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingTimeBlock, setIsAddingTimeBlock] = useState(false);
   const [draggedOverSlot, setDraggedOverSlot] = useState<string | null>(null);

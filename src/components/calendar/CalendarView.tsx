@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useTaskContext, Task } from '@/context/TaskContext';
+import { useTaskContext, useViewModeContext, Task } from '@/context/TaskContext';
 import { toast } from "sonner";
 import { isSameDay, format } from 'date-fns';
 import FilterPills from '@/components/filters/FilterPills';
@@ -12,7 +13,8 @@ import CalendarViewHeader from './header/CalendarViewHeader';
 import { useCalendarNavigation } from './hooks/useCalendarNavigation';
 
 const CalendarView: React.FC = () => {
-  const { selectedDate: contextSelectedDate, setSelectedDate: setContextSelectedDate, tasks, updateTask } = useTaskContext();
+  const { tasks, updateTask } = useTaskContext();
+  const { selectedDate: contextSelectedDate, setSelectedDate: setContextSelectedDate } = useViewModeContext();
   const { activeFilters } = useFilterContext();
   const [showTaskList, setShowTaskList] = useState(true);
   const [showMiniCalendar, setShowMiniCalendar] = useState(false);

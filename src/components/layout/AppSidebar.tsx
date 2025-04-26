@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CalendarIcon, CheckSquare } from 'lucide-react';
 import {
@@ -13,19 +12,15 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
-import { useTaskContext } from '@/context/TaskContext';
+import { useTaskContext, useViewModeContext } from '@/context/TaskContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 export function AppSidebar() {
-  const { 
-    projects, 
-    addProject, 
-    selectedView, 
-    setSelectedView 
-  } = useTaskContext();
+  const { projects, addProject } = useTaskContext(); 
+  const { selectedView, setSelectedView } = useViewModeContext();
 
   const [newProject, setNewProject] = React.useState({
     name: '',

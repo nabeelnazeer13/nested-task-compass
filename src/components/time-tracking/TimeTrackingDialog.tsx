@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useTaskContext, Task } from '@/context/TaskContext';
+import { useTaskContext, useTimeTrackingContext, Task } from '@/context/TaskContext';
 import { 
   Dialog, 
   DialogContent, 
@@ -32,7 +32,7 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
     stopTimeTracking,
     updateTimeTracking,
     deleteTimeTracking
-  } = useTaskContext();
+  } = useTimeTrackingContext();
   
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);

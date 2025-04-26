@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useTaskContext, Task } from '@/context/TaskContext';
+import { useTaskContext, useTimeTrackingContext, Task } from '@/context/TaskContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -16,7 +15,6 @@ interface AddTimeBlockDialogProps {
   date: Date;
 }
 
-// Helper to generate time slots for selection
 const generateTimeSlots = () => {
   const slots = [];
   for (let hour = 8; hour < 21; hour++) {
@@ -37,13 +35,12 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
   task,
   date
 }) => {
-  const { addTimeBlock, timeTrackings } = useTaskContext();
+  const { addTimeBlock, timeTrackings } = useTimeTrackingContext();
   
   const [startTime, setStartTime] = useState(timeSlots[0]);
   const [endTime, setEndTime] = useState(timeSlots[2]);
   const [useTrackedTime, setUseTrackedTime] = useState(false);
   
-  // Get time trackings for this task on this date
   const taskDayTrackings = timeTrackings.filter(tracking => 
     tracking.taskId === task.id && 
     format(new Date(tracking.startTime), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
@@ -52,11 +49,9 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
   const totalTrackedMinutes = taskDayTrackings.reduce((sum, tracking) => sum + tracking.duration, 0);
   const hasTrackedTime = totalTrackedMinutes > 0;
   
-  // Calculate suggested times based on tracked time
   useEffect(() => {
     if (!hasTrackedTime || !useTrackedTime) return;
     
-    // Find earliest start time and latest end time from tracking data
     if (taskDayTrackings.length > 0) {
       const earliestTracking = taskDayTrackings.reduce((earliest, current) => {
         const currentStart = new Date(current.startTime);
@@ -65,14 +60,15 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
       });
       
       const latestTracking = taskDayTrackings.reduce((latest, current) => {
-        // If current tracking has no end time, it's ongoing, so use current time
-        const currentEnd = current.endTime ? new Date(current.endTime) : new Date();
-        // If latest has no end time, use current time
-        const latestEnd = latest.endTime ? new Date(latest.endTime) : new Date();
-        return currentEnd > latestEnd ? current : latest;
+        if (current.endTime) {
+          const currentEnd = new Date(current.endTime);
+          return currentEnd > latestEnd ? current : latest;
+        } else {
+          const currentEnd = new Date();
+          return currentEnd > latestEnd ? current : latest;
+        }
       });
       
-      // Convert to time slot format
       const startHour = new Date(earliestTracking.startTime).getHours();
       const startMinute = new Date(earliestTracking.startTime).getMinutes();
       const roundedStartMinute = startMinute < 30 ? 0 : 30;
@@ -83,7 +79,6 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
       const roundedEndMinute = endMinute < 30 ? 0 : 30;
       const roundUpEndHour = endMinute > 30 ? endHour + 1 : endHour;
       
-      // Find the closest time slots
       const formattedStartHour = startHour % 12 === 0 ? 12 : startHour % 12;
       const startMeridiem = startHour < 12 ? 'AM' : 'PM';
       const suggestedStart = `${formattedStartHour}:${roundedStartMinute === 0 ? '00' : '30'} ${startMeridiem}`;
@@ -92,7 +87,6 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
       const endMeridiem = roundUpEndHour < 12 ? 'AM' : 'PM';
       const suggestedEnd = `${formattedEndHour}:${roundedEndMinute === 0 ? '00' : '30'} ${endMeridiem}`;
       
-      // Find the closest matching time slots in our options
       const closestStartSlot = timeSlots.find(slot => slot === suggestedStart) || timeSlots[0];
       const closestEndSlot = timeSlots.find(slot => slot === suggestedEnd) || 
                             timeSlots[Math.min(timeSlots.indexOf(closestStartSlot) + 1, timeSlots.length - 1)];
@@ -110,7 +104,6 @@ const AddTimeBlockDialog: React.FC<AddTimeBlockDialogProps> = ({
       endTime
     });
     
-    // Close dialog
     onOpenChange(false);
   };
 

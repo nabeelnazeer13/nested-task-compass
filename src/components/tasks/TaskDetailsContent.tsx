@@ -6,7 +6,7 @@ import { Calendar, Clock, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
 import TrackingHistory from '@/components/time-tracking/TrackingHistory';
-import { useTaskContext } from '@/context/TaskContext';
+import { useTaskContext, useTimeTrackingContext } from '@/context/TaskContext';
 import { priorityColors, priorityLabels } from '@/lib/priority-utils';
 import { EditablePriority } from './EditablePriority';
 import { EditableDateTime } from './EditableDateTime';
@@ -20,7 +20,8 @@ interface TaskDetailsContentProps {
 }
 
 const TaskDetailsContent: React.FC<TaskDetailsContentProps> = ({ task }) => {
-  const { timeTrackings, updateTimeTracking, deleteTimeTracking, updateTask } = useTaskContext();
+  const { updateTask } = useTaskContext();
+  const { timeTrackings, updateTimeTracking, deleteTimeTracking } = useTimeTrackingContext();
   const taskTrackings = timeTrackings.filter(t => t.taskId === task.id);
   const isMobile = useIsMobile();
   

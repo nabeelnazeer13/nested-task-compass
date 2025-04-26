@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Task, Priority } from '@/context/TaskTypes';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Plus, Square, Play } from 'lucide-react';
-import { useTaskContext } from '@/context/TaskContext';
+import { useTaskContext, useTimeTrackingContext } from '@/context/TaskContext';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -22,13 +21,12 @@ interface TaskItemActionsProps {
 }
 
 const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask }) => {
+  const { updateTask, deleteTask } = useTaskContext();
   const { 
-    updateTask, 
-    deleteTask,
-    activeTimeTracking,
-    startTimeTracking,
-    stopTimeTracking,
-  } = useTaskContext();
+    activeTimeTracking, 
+    startTimeTracking, 
+    stopTimeTracking 
+  } = useTimeTrackingContext();
   
   const isMobile = useIsMobile();
   const isTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
