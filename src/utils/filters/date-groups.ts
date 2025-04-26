@@ -2,6 +2,7 @@
 import { Task } from '@/context/TaskTypes';
 import { DateGroup } from '@/context/FilterContext';
 import { isBefore, isToday, isTomorrow, isThisWeek, isAfter, startOfDay, addDays, startOfWeek, endOfWeek, addWeeks } from 'date-fns';
+import { TaskGroup } from './types';
 
 export const getDateGroup = (date: Date | undefined, completed: boolean = false): DateGroup => {
   if (!date) return DateGroup.NO_DATE;

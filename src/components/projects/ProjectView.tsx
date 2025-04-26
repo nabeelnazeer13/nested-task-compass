@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import ProjectItem from './ProjectItem';
@@ -7,7 +8,7 @@ import ProjectViewOptions from './ProjectViewOptions';
 import FilterButton from '@/components/filters/FilterButton';
 import FilterPills from '@/components/filters/FilterPills';
 import { ChevronDown } from 'lucide-react';
-import { filterTasks, sortTasks, groupTasks } from '@/utils/task-filters';
+import { filterTasks, sortTasks, groupTasks } from '@/utils/filters';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AddTaskDialog from './AddTaskDialog';
 
