@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
 import TrackingHistory from '@/components/time-tracking/TrackingHistory';
 import { useTaskContext, useTimeTrackingContext } from '@/context/TaskContext';
-import { priorityColors, priorityLabels } from '@/lib/priority-utils';
+import { getPriorityColor, getPriorityLabel } from '@/lib/priority-utils';
 import { EditablePriority } from './EditablePriority';
 import { EditableDateTime } from './EditableDateTime';
 import { EditableEstimatedTime } from './EditableEstimatedTime';
@@ -65,8 +65,8 @@ const TaskDetailsContent: React.FC<TaskDetailsContentProps> = ({ task }) => {
           />
         ) : (
           <div className="flex items-center gap-2">
-            <Badge className={`${priorityColors[task.priority]}`}>
-              {priorityLabels[task.priority]}
+            <Badge className={`${getPriorityColor(task.priority).bg} ${getPriorityColor(task.priority).text}`}>
+              {getPriorityLabel(task.priority)}
             </Badge>
             <Button variant="ghost" size="icon" onClick={() => setEditingPriority(true)}>
               <Edit2 className="h-4 w-4" />

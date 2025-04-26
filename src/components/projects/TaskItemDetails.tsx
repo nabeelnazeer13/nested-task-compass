@@ -6,7 +6,7 @@ import { Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatMinutes } from '@/lib/time-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { priorityColors, priorityLabels } from '@/lib/priority-utils';
+import { getPriorityColor, getPriorityLabel } from '@/lib/priority-utils';
 
 interface TaskItemDetailsProps {
   task: Task;
@@ -33,8 +33,8 @@ const TaskItemDetails: React.FC<TaskItemDetailsProps> = ({ task }) => {
         )}
         
         {!isMobile && (
-          <Badge className={`text-xs ${priorityColors[task.priority]} shrink-0`}>
-            {priorityLabels[task.priority]}
+          <Badge className={`text-xs ${getPriorityColor(task.priority).text} ${getPriorityColor(task.priority).bg} shrink-0`}>
+            {getPriorityLabel(task.priority)}
           </Badge>
         )}
         

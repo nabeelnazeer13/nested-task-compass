@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { priorityLabels, priorityColors } from '@/lib/priority-utils';
+import { getPriorityLabel, getPriorityColor } from '@/lib/priority-utils';
 
 interface EditablePriorityProps {
   priority: Priority;
@@ -34,7 +34,7 @@ export const EditablePriority: React.FC<EditablePriorityProps> = ({
         <SelectContent>
           {(['low', 'medium', 'high'] as Priority[]).map((p) => (
             <SelectItem key={p} value={p}>
-              <span className={priorityColors[p]}>{priorityLabels[p]}</span>
+              <span className={getPriorityColor(p).text}>{getPriorityLabel(p)}</span>
             </SelectItem>
           ))}
         </SelectContent>
