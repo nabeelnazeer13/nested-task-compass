@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { Cache } from '@/utils/cache-utils';
 
 /**
  * Utility function to handle Supabase errors
@@ -73,3 +73,14 @@ export const getCurrentUserId = async (): Promise<string> => {
   }
   return user.id;
 };
+
+// Create caches for different data types
+export const projectsCache = new Cache<any>({ ttl: 300000, capacity: 100 }); // 5 minutes TTL
+export const tasksCache = new Cache<any>({ ttl: 300000, capacity: 1000 });
+export const timeBlocksCache = new Cache<any>({ ttl: 300000, capacity: 500 });
+export const timeTrackingsCache = new Cache<any>({ ttl: 300000, capacity: 500 });
+
+export function getCacheKey(operation: string, params?: any): string {
+  const userId = supabase.auth.getUser()?.data.user?.id;
+  return `${userId}:${operation}:${JSON.stringify(params)}`;
+}

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData, getCurrentUserId } from './serviceUtils';
+import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData, getCurrentUserId, projectsCache, getCacheKey } from './serviceUtils';
 import { Project } from '@/context/TaskTypes';
 
 /**
@@ -7,6 +7,12 @@ import { Project } from '@/context/TaskTypes';
  */
 export async function getProjects(): Promise<Project[]> {
   try {
+    const cacheKey = getCacheKey('projects');
+    const cachedProjects = projectsCache.get(cacheKey);
+    if (cachedProjects) {
+      return cachedProjects;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
     
@@ -17,13 +23,15 @@ export async function getProjects(): Promise<Project[]> {
     
     if (error) throw error;
     
-    // Convert the Supabase projects to our Project type
-    return data.map(project => ({
+    const projects = data.map(project => ({
       id: project.id,
       name: project.name,
       description: project.description || undefined,
       isExpanded: project.is_expanded || false,
     }));
+
+    projectsCache.set(cacheKey, projects);
+    return projects;
   } catch (error) {
     return handleSupabaseError(error, 'Failed to fetch projects');
   }
@@ -34,30 +42,36 @@ export async function getProjects(): Promise<Project[]> {
  */
 export async function createProject(project: Omit<Project, 'id'>): Promise<Project> {
   try {
-    const userId = await getCurrentUserId();
-    
-    const { data, error } = await supabase
-      .from('projects')
-      .insert({
-        name: project.name,
-        description: project.description,
-        is_expanded: project.isExpanded,
-        user_id: userId
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description || undefined,
-      isExpanded: data.is_expanded || false,
-    };
+    const result = await _createProject(project);
+    projectsCache.clear(); // Clear cache on mutation
+    return result;
   } catch (error) {
     return handleSupabaseError(error, 'Failed to create project');
   }
+}
+
+async function _createProject(project: Omit<Project, 'id'>): Promise<Project> {
+  const userId = await getCurrentUserId();
+  
+  const { data, error } = await supabase
+    .from('projects')
+    .insert({
+      name: project.name,
+      description: project.description,
+      is_expanded: project.isExpanded,
+      user_id: userId
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description || undefined,
+    isExpanded: data.is_expanded || false,
+  };
 }
 
 /**
@@ -65,19 +79,24 @@ export async function createProject(project: Omit<Project, 'id'>): Promise<Proje
  */
 export async function updateProject(project: Project): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        name: project.name,
-        description: project.description,
-        is_expanded: project.isExpanded
-      })
-      .eq('id', project.id);
-    
-    if (error) throw error;
+    await _updateProject(project);
+    projectsCache.clear(); // Clear cache on mutation
   } catch (error) {
     handleSupabaseError(error, 'Failed to update project');
   }
+}
+
+async function _updateProject(project: Project): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      name: project.name,
+      description: project.description,
+      is_expanded: project.isExpanded
+    })
+    .eq('id', project.id);
+  
+  if (error) throw error;
 }
 
 /**
@@ -85,15 +104,20 @@ export async function updateProject(project: Project): Promise<void> {
  */
 export async function deleteProject(projectId: string): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', projectId);
-    
-    if (error) throw error;
+    await _deleteProject(projectId);
+    projectsCache.clear(); // Clear cache on mutation
   } catch (error) {
     handleSupabaseError(error, 'Failed to delete project');
   }
+}
+
+async function _deleteProject(projectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId);
+  
+  if (error) throw error;
 }
 
 /**
