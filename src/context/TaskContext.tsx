@@ -6,6 +6,7 @@ import { useTimeTrackingContext } from './providers/TimeTrackingProvider';
 import { useViewModeContext } from './providers/ViewModeProvider';
 import { useUnifiedTaskContext } from './UnifiedTaskContext';
 import type { Task, Project, TimeBlock, TimeTracking, Priority } from './TaskTypes';
+import type { TaskContextType, TimeTrackingContextType } from './types/TaskContextTypes';
 
 // Export the unified task context as the default useTaskContext
 export const useTaskContext = useUnifiedTaskContext;
@@ -21,4 +22,6 @@ export {
   type TimeBlock,
   type TimeTracking,
   type Priority,
+  type TaskContextType,
+  type TimeTrackingContextType,
 };

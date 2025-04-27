@@ -1,29 +1,13 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Project, Task, ReactNode } from '../TaskTypes';
+import { Project, Task } from '../TaskTypes';
 import { sampleProjects, sampleTasks } from '../TaskMockData';
 import { useProjectActions } from '../hooks/useProjectActions';
 import { useTaskActions } from '../hooks/useTaskActions';
+import type { TaskContextType } from '../types/TaskContextTypes';
 
-// This provider is used when user is not authenticated
-// It stores data in localStorage as a fallback
+const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-interface TaskContextProviderType {
-  projects: Project[];
-  tasks: Task[];
-  addProject: (project: Omit<Project, 'id' | 'isExpanded'>) => void;
-  updateProject: (project: Project) => void;
-  deleteProject: (projectId: string) => void;
-  toggleProjectExpanded: (projectId: string) => void;
-  addTask: (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => void;
-  updateTask: (task: Task) => void;
-  deleteTask: (taskId: string) => void;
-  toggleTaskExpanded: (taskId: string) => void;
-}
-
-const TaskContext = createContext<TaskContextProviderType | undefined>(undefined);
-
-export const TaskContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const TaskContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
 
@@ -64,7 +48,7 @@ export const TaskContextProvider: React.FC<{ children: ReactNode }> = ({ childre
   const projectActions = useProjectActions(projects, setProjects);
   const taskActions = useTaskActions(tasks, setTasks, () => tasks);
 
-  const value: TaskContextProviderType = {
+  const value: TaskContextType = {
     projects,
     tasks,
     ...projectActions,
