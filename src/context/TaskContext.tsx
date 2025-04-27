@@ -4,12 +4,20 @@ import { useTaskContext as useLocalTaskContext } from './providers/TaskContextPr
 import { useSupabaseTaskContext } from './providers/SupabaseTaskProvider';
 import { useTimeTrackingContext } from './providers/TimeTrackingProvider';
 import { useViewModeContext } from './providers/ViewModeProvider';
-import useUnifiedTaskContext from './UnifiedTaskContext';
 import type { Task, Project, TimeBlock, TimeTracking, Priority } from './TaskTypes';
 import type { TaskContextType, TimeTrackingContextType } from './types/TaskContextTypes';
 
-// Export the unified task context as the default useTaskContext
-export const useTaskContext = useUnifiedTaskContext;
+// Create a function that returns the hook rather than executing it immediately
+const createUnifiedTaskContext = () => {
+  const useUnifiedTaskContext = () => {
+    const { user } = useAuth();
+    return user ? useSupabaseTaskContext() : useLocalTaskContext();
+  };
+  return useUnifiedTaskContext;
+};
+
+// Export the hook factory function result
+export const useTaskContext = createUnifiedTaskContext();
 
 export {
   HybridTaskProvider as TaskProvider,
