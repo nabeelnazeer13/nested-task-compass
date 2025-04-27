@@ -23,11 +23,11 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
-      <TaskProvider>
-        <FilterProvider>
+      <FilterProvider>
+        <TaskProvider>
           <AppLayout />
-        </FilterProvider>
-      </TaskProvider>
+        </TaskProvider>
+      </FilterProvider>
     </ErrorBoundary>
   );
 };

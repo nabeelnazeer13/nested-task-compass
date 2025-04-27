@@ -18,7 +18,6 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
   const [migrationCompleted, setMigrationCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if migration dialog should be shown when user logs in
   useEffect(() => {
     if (user && !authLoading) {
       if (!migrationCompleted && isMigrationNeeded()) {
@@ -55,11 +54,12 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
     );
   }
 
-  // For authenticated users, use Supabase provider with TimeTrackingProvider
-  if (user) {
-    return (
-      <ErrorBoundary>
-        <ViewModeProvider>
+  // First wrap everything in ViewModeProvider
+  return (
+    <ErrorBoundary>
+      <ViewModeProvider>
+        {user ? (
+          // For authenticated users, use Supabase provider
           <SupabaseTaskProvider>
             <TimeTrackingProvider>
               <>
@@ -72,20 +72,14 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
               </>
             </TimeTrackingProvider>
           </SupabaseTaskProvider>
-        </ViewModeProvider>
-      </ErrorBoundary>
-    );
-  }
-
-  // For unauthenticated users, use local storage provider
-  return (
-    <ErrorBoundary>
-      <ViewModeProvider>
-        <TaskContextProvider>
-          <TimeTrackingProvider>
-            {children}
-          </TimeTrackingProvider>
-        </TaskContextProvider>
+        ) : (
+          // For unauthenticated users, use local storage provider
+          <TaskContextProvider>
+            <TimeTrackingProvider>
+              {children}
+            </TimeTrackingProvider>
+          </TaskContextProvider>
+        )}
       </ViewModeProvider>
     </ErrorBoundary>
   );

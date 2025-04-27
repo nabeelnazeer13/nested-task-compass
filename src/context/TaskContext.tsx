@@ -4,20 +4,18 @@ import { useTaskContext as useLocalTaskContext } from './providers/TaskContextPr
 import { useSupabaseTaskContext } from './providers/SupabaseTaskProvider';
 import { useTimeTrackingContext } from './providers/TimeTrackingProvider';
 import { useViewModeContext } from './providers/ViewModeProvider';
-import { useAuth } from './AuthContext';
+import { useUnifiedTaskContext } from './UnifiedTaskContext';
 import type { Task, Project, TimeBlock, TimeTracking, Priority } from './TaskTypes';
 
-// Custom hook that provides the correct context based on auth state
-export const useTaskContext = () => {
-  const { user } = useAuth();
-  return user ? useSupabaseTaskContext() : useLocalTaskContext();
-};
+// Export the unified task context as the default useTaskContext
+export const useTaskContext = useUnifiedTaskContext;
 
 export {
   HybridTaskProvider as TaskProvider,
   useTimeTrackingContext,
   useViewModeContext,
-  useSupabaseTaskContext, // Export this hook so it can be imported directly
+  useLocalTaskContext,
+  useSupabaseTaskContext,
   type Task,
   type Project,
   type TimeBlock,
