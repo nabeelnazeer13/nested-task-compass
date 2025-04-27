@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProjectView from '@/components/projects/ProjectView';
 import CalendarView from '@/components/calendar/CalendarView';
-import { useTaskContext, useViewModeContext } from '@/context/TaskContext';
+import { useTaskContext, useViewModeContext, useSupabaseTaskContext } from '@/context/TaskContext';
+import { useAuth } from '@/context/AuthContext';
 import { Plus, Calendar, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -11,9 +13,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AddTaskFormDialog from '@/components/tasks/AddTaskFormDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const AppLayout = () => {
-  const { addProject } = useTaskContext();
+  const { user } = useAuth();
+  
+  // Use the appropriate context hook based on authentication status
+  const context = user ? useSupabaseTaskContext() : useTaskContext();
+  const { addProject } = context;
+  
   const { selectedView, setSelectedView } = useViewModeContext();
   
   const [isAddingProject, setIsAddingProject] = React.useState(false);
@@ -42,71 +50,81 @@ const AppLayout = () => {
     }
   };
   
-  return <div className="container mx-auto md:py-6 space-y-4 md:space-y-8 md:px-6 px-0 py-[20px]">
-      <Tabs defaultValue="projects" value={selectedView} onValueChange={handleTabChange}>
-        <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center w-full gap-2 md:gap-4">
-            <h1 className="text-xl md:text-3xl font-bold mr-2 md:mr-4 text-orange-600">Khonja</h1>
-            <TabsList className="grid grid-cols-2 w-40 md:w-48 shrink-0">
-              <TabsTrigger value="projects" className="flex items-center">
-                <CheckSquare className="h-4 w-4 mr-1 md:mr-2" />
-                <span className={isMobile ? "text-xs" : ""}>All tasks</span>
-              </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1 md:mr-2" />
-                <span className={isMobile ? "text-xs" : ""}>Calendar</span>
-              </TabsTrigger>
-            </TabsList>
-            <span className="flex-1" />
-            <div className="flex gap-1 md:gap-2">
-              <AddTaskFormDialog open={isAddingTask} onOpenChange={setIsAddingTask} triggerElement={<Button size={isMobile ? "sm" : "default"}>
-                    <Plus className="h-4 w-4" />
-                    {!isMobile && <span className="ml-2 text-slate-50">New Task</span>}
-                  </Button>} />
-              <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
-                <DialogTrigger asChild>
-                  <Button size={isMobile ? "sm" : "default"}>
-                    <Plus className="h-4 w-4" />
-                    {!isMobile && <span className="ml-2">New Project</span>}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-[90vw] md:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Project Name</Label>
-                      <Input id="name" value={newProject.name} onChange={e => setNewProject({
-                      ...newProject,
-                      name: e.target.value
-                    })} placeholder="Enter project name" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description (Optional)</Label>
-                      <Textarea id="description" value={newProject.description} onChange={e => setNewProject({
-                      ...newProject,
-                      description: e.target.value
-                    })} placeholder="Enter project description" />
-                    </div>
-                    <Button onClick={handleAddProject} className="w-full">
-                      Create Project
+  return (
+    <ErrorBoundary>
+      <div className="container mx-auto md:py-6 space-y-4 md:space-y-8 md:px-6 px-0 py-[20px]">
+        <Tabs defaultValue="projects" value={selectedView} onValueChange={handleTabChange}>
+          <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center w-full gap-2 md:gap-4">
+              <h1 className="text-xl md:text-3xl font-bold mr-2 md:mr-4 text-orange-600">Khonja</h1>
+              <TabsList className="grid grid-cols-2 w-40 md:w-48 shrink-0">
+                <TabsTrigger value="projects" className="flex items-center">
+                  <CheckSquare className="h-4 w-4 mr-1 md:mr-2" />
+                  <span className={isMobile ? "text-xs" : ""}>All tasks</span>
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1 md:mr-2" />
+                  <span className={isMobile ? "text-xs" : ""}>Calendar</span>
+                </TabsTrigger>
+              </TabsList>
+              <span className="flex-1" />
+              <div className="flex gap-1 md:gap-2">
+                <AddTaskFormDialog 
+                  open={isAddingTask} 
+                  onOpenChange={setIsAddingTask} 
+                  triggerElement={
+                    <Button size={isMobile ? "sm" : "default"}>
+                      <Plus className="h-4 w-4" />
+                      {!isMobile && <span className="ml-2 text-slate-50">New Task</span>}
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  } 
+                />
+                <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
+                  <DialogTrigger asChild>
+                    <Button size={isMobile ? "sm" : "default"}>
+                      <Plus className="h-4 w-4" />
+                      {!isMobile && <span className="ml-2">New Project</span>}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[90vw] md:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Create New Project</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Project Name</Label>
+                        <Input id="name" value={newProject.name} onChange={e => setNewProject({
+                          ...newProject,
+                          name: e.target.value
+                        })} placeholder="Enter project name" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description (Optional)</Label>
+                        <Textarea id="description" value={newProject.description} onChange={e => setNewProject({
+                          ...newProject,
+                          description: e.target.value
+                        })} placeholder="Enter project description" />
+                      </div>
+                      <Button onClick={handleAddProject} className="w-full">
+                        Create Project
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <TabsContent value="projects" className="mt-4 md:mt-6">
-          <ProjectView />
-        </TabsContent>
-        <TabsContent value="calendar" className="mt-4 md:mt-6">
-          <CalendarView />
-        </TabsContent>
-      </Tabs>
-    </div>;
+          <TabsContent value="projects" className="mt-4 md:mt-6">
+            <ProjectView />
+          </TabsContent>
+          <TabsContent value="calendar" className="mt-4 md:mt-6">
+            <CalendarView />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </ErrorBoundary>
+  );
 };
 
 export default AppLayout;

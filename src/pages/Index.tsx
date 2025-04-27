@@ -4,6 +4,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import { TaskProvider } from '@/context/TaskContext';
 import { FilterProvider } from '@/context/FilterContext';
 import { useAuth } from '@/context/AuthContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const Index = () => {
   const { loading: authLoading } = useAuth();
@@ -12,7 +14,7 @@ const Index = () => {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <LoadingSpinner className="h-12 w-12 mx-auto mb-4" />
           <p className="text-muted-foreground">Loading your tasks...</p>
         </div>
       </div>
@@ -20,11 +22,13 @@ const Index = () => {
   }
 
   return (
-    <TaskProvider>
-      <FilterProvider>
-        <AppLayout />
-      </FilterProvider>
-    </TaskProvider>
+    <ErrorBoundary>
+      <TaskProvider>
+        <FilterProvider>
+          <AppLayout />
+        </FilterProvider>
+      </TaskProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -10,6 +10,7 @@ import MigrationDialog from '@/components/migration/MigrationDialog';
 import { toast } from '@/components/ui/use-toast';
 import { isMigrationNeeded } from '@/services/migrationService';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
@@ -90,29 +91,33 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
   // If a user is logged in, use the Supabase provider, otherwise use the local storage provider
   if (user) {
     return (
-      <SupabaseTaskProvider>
-        <ViewModeProvider>
-          <>
-            {children}
-            <MigrationDialog 
-              open={showMigrationDialog} 
-              onOpenChange={handleDismissMigration}
-              onMigrationComplete={handleMigrationComplete}
-            />
-          </>
-        </ViewModeProvider>
-      </SupabaseTaskProvider>
+      <ErrorBoundary>
+        <SupabaseTaskProvider>
+          <ViewModeProvider>
+            <>
+              {children}
+              <MigrationDialog 
+                open={showMigrationDialog} 
+                onOpenChange={handleDismissMigration}
+                onMigrationComplete={handleMigrationComplete}
+              />
+            </>
+          </ViewModeProvider>
+        </SupabaseTaskProvider>
+      </ErrorBoundary>
     );
   }
 
   // Fallback to local storage when not authenticated
   return (
-    <TaskContextProvider>
-      <TimeTrackingProvider>
-        <ViewModeProvider>
-          {children}
-        </ViewModeProvider>
-      </TimeTrackingProvider>
-    </TaskContextProvider>
+    <ErrorBoundary>
+      <TaskContextProvider>
+        <TimeTrackingProvider>
+          <ViewModeProvider>
+            {children}
+          </ViewModeProvider>
+        </TimeTrackingProvider>
+      </TaskContextProvider>
+    </ErrorBoundary>
   );
 };
