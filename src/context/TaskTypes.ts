@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 
 export type Priority = 'low' | 'medium' | 'high';
@@ -59,3 +58,8 @@ export interface TimeBlock {
 }
 
 export type { ReactNode };
+
+export interface SupabaseTaskContextProviderType {
+  isOnline: boolean;
+  pendingOperations: number;
+}

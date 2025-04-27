@@ -11,6 +11,7 @@ import * as taskService from '@/services/taskService';
 import * as timeTrackingService from '@/services/timeTrackingService';
 import * as timeBlockService from '@/services/timeBlockService';
 import { toast } from '@/components/ui/use-toast';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 interface SupabaseTaskContextProviderType {
   projects: Project[];
@@ -41,6 +42,8 @@ interface SupabaseTaskContextProviderType {
   addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => Promise<void>;
   updateTimeBlock: (timeBlock: TimeBlock) => Promise<void>;
   deleteTimeBlock: (timeBlockId: string) => Promise<void>;
+  isOnline: boolean;
+  pendingOperations: number;
 }
 
 const SupabaseTaskContext = createContext<SupabaseTaskContextProviderType | undefined>(undefined);
@@ -58,6 +61,13 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
   const taskActions = useTaskActions(tasks, setTasks, () => tasks);
   const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
   const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
+
+  const isOnline = useOnlineStatus();
+  const [pendingOperations, setPendingOperations] = useState<Array<{
+    type: 'add' | 'update' | 'delete';
+    entity: 'task' | 'project' | 'timeTracking' | 'timeBlock';
+    data: any;
+  }>>([]);
 
   useEffect(() => {
     if (user) {
@@ -119,6 +129,48 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
       });
     };
   }, [user]);
+
+  // Process pending operations when coming back online
+  useEffect(() => {
+    if (isOnline && pendingOperations.length > 0) {
+      const processPendingOperations = async () => {
+        const operations = [...pendingOperations];
+        setPendingOperations([]);
+
+        for (const operation of operations) {
+          try {
+            switch (operation.type) {
+              case 'add':
+                if (operation.entity === 'task') {
+                  await taskService.createTask(operation.data);
+                } else if (operation.entity === 'project') {
+                  await projectService.createProject(operation.data);
+                }
+                // ... handle other entities
+                break;
+              case 'update':
+                if (operation.entity === 'task') {
+                  await taskService.updateTask(operation.data);
+                }
+                // ... handle other entities
+                break;
+              case 'delete':
+                if (operation.entity === 'task') {
+                  await taskService.deleteTask(operation.data);
+                }
+                // ... handle other entities
+                break;
+            }
+          } catch (error) {
+            console.error('Error processing pending operation:', error);
+            setPendingOperations(prev => [...prev, operation]);
+          }
+        }
+      };
+
+      processPendingOperations();
+    }
+  }, [isOnline, pendingOperations]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -250,30 +302,95 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
+  // Modified addTask with optimistic updates
   const addTaskDb = async (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => {
+    // Create optimistic version of the task
+    const optimisticTask: Task = {
+      ...task,
+      id: crypto.randomUUID(),
+      children: [],
+      isExpanded: true,
+      timeTracked: 0
+    };
+
+    // Optimistically update UI
+    taskActions.addTask(optimisticTask);
+
     try {
+      if (!isOnline) {
+        setPendingOperations(prev => [...prev, { type: 'add', entity: 'task', data: task }]);
+        return;
+      }
+
       const newTask = await taskService.createTask(task);
-      taskActions.addTask(newTask);
+      
+      // Replace optimistic task with real one
+      taskActions.updateTask(newTask);
     } catch (error) {
       console.error('Error adding task:', error);
+      // Revert optimistic update
+      taskActions.deleteTask(optimisticTask.id);
+      toast({
+        title: "Error",
+        description: "Failed to add task. It will be retried when you're back online.",
+        variant: "destructive",
+      });
     }
   };
 
+  // Modified updateTask with optimistic updates
   const updateTaskDb = async (task: Task) => {
+    const previousTask = findTaskById(task.id, tasks);
+    
+    // Optimistically update UI
+    taskActions.updateTask(task);
+
     try {
+      if (!isOnline) {
+        setPendingOperations(prev => [...prev, { type: 'update', entity: 'task', data: task }]);
+        return;
+      }
+
       await taskService.updateTask(task);
-      taskActions.updateTask(task);
     } catch (error) {
       console.error('Error updating task:', error);
+      // Revert optimistic update
+      if (previousTask) {
+        taskActions.updateTask(previousTask);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update task. Changes will be saved when you're back online.",
+        variant: "destructive",
+      });
     }
   };
 
+  // Modified deleteTask with optimistic updates
   const deleteTaskDb = async (taskId: string) => {
+    const taskToDelete = findTaskById(taskId, tasks);
+    
+    // Optimistically update UI
+    taskActions.deleteTask(taskId);
+
     try {
+      if (!isOnline) {
+        setPendingOperations(prev => [...prev, { type: 'delete', entity: 'task', data: taskId }]);
+        return;
+      }
+
       await taskService.deleteTask(taskId);
-      taskActions.deleteTask(taskId);
     } catch (error) {
       console.error('Error deleting task:', error);
+      // Revert optimistic update
+      if (taskToDelete) {
+        taskActions.addTask(taskToDelete);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete task. It will be retried when you're back online.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -405,6 +522,7 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     return undefined;
   };
 
+  // Add offline status to the context value
   const value: SupabaseTaskContextProviderType = {
     projects,
     tasks,
@@ -429,12 +547,20 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     deleteTimeTracking: deleteTimeTrackingDb,
     addTimeBlock: addTimeBlockDb,
     updateTimeBlock: updateTimeBlockDb,
-    deleteTimeBlock: deleteTimeBlockDb
+    deleteTimeBlock: deleteTimeBlockDb,
+    isOnline,
+    pendingOperations: pendingOperations.length,
   };
 
   return (
     <SupabaseTaskContext.Provider value={value}>
       {children}
+      {!isOnline && (
+        <div className="fixed bottom-4 right-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md shadow-lg flex items-center gap-2">
+          <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+          Offline Mode {pendingOperations.length > 0 && `(${pendingOperations.length} pending changes)`}
+        </div>
+      )}
     </SupabaseTaskContext.Provider>
   );
 };
