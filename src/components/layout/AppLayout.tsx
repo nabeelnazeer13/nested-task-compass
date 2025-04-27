@@ -3,7 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProjectView from '@/components/projects/ProjectView';
 import CalendarView from '@/components/calendar/CalendarView';
-import { useTaskContext, useViewModeContext, useSupabaseTaskContext } from '@/context/TaskContext';
+import { useTaskContext, useViewModeContext } from '@/context/TaskContext';
 import { useAuth } from '@/context/AuthContext';
 import { Plus, Calendar, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 const AppLayout = () => {
   const { user } = useAuth();
   
-  // Use the appropriate context hook based on authentication status
-  const context = user ? useSupabaseTaskContext() : useTaskContext();
+  // Use the unified task context which automatically picks the correct provider
+  const context = useTaskContext();
   const { addProject } = context;
   
   const { selectedView, setSelectedView } = useViewModeContext();

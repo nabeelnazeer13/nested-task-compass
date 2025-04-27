@@ -17,6 +17,7 @@ export {
   HybridTaskProvider as TaskProvider,
   useTimeTrackingContext,
   useViewModeContext,
+  useSupabaseTaskContext, // Export this hook so it can be imported directly
   type Task,
   type Project,
   type TimeBlock,
