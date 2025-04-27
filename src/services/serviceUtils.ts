@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Cache } from '@/utils/cache-utils';
@@ -67,6 +68,7 @@ export const processSupabaseData = <T extends Record<string, any>>(data: T): T =
  * Get the current authenticated user's ID
  */
 export const getCurrentUserId = async (): Promise<string> => {
+  // Fix: await the Promise before trying to access data
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
@@ -81,6 +83,7 @@ export const timeBlocksCache = new Cache<any>({ ttl: 300000, capacity: 500 });
 export const timeTrackingsCache = new Cache<any>({ ttl: 300000, capacity: 500 });
 
 export function getCacheKey(operation: string, params?: any): string {
-  const userId = supabase.auth.getUser()?.data.user?.id;
+  const { data: { user } } = supabase.auth.getSession();
+  const userId = user?.id || 'anonymous';
   return `${userId}:${operation}:${JSON.stringify(params)}`;
 }
