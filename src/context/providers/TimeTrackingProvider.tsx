@@ -27,14 +27,14 @@ interface TimeTrackingContextType {
 const TimeTrackingContext = createContext<TimeTrackingContextType | undefined>(undefined);
 
 export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, tasks, updateTask } = useTaskContext();
+  const { tasks, updateTask } = useTaskContext();
+  const { user } = useAuth();
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [timeTrackings, setTimeTrackings] = useState<TimeTracking[]>([]);
   const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
   
   useEffect(() => {
     if (!user) {
-      // Reset state when user logs out
       setTimeBlocks([]);
       setTimeTrackings([]);
       setActiveTimeTracking(null);
@@ -59,7 +59,6 @@ export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ childr
           () => loadTimeBlocks())
     ];
 
-    // Subscribe to all channels
     Promise.all(channels.map(channel => channel.subscribe()));
 
     return () => {
