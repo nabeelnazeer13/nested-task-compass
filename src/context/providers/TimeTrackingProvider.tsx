@@ -7,6 +7,8 @@ import { useAuth } from '../AuthContext';
 import * as timeTrackingService from '@/services/timeTrackingService';
 import * as timeBlockService from '@/services/timeBlockService';
 import { withTaskContext } from '../hocs/withTaskContext';
+import { toast } from "@/hooks/use-toast";
+import { findTaskById, updateTaskInHierarchy, getRootTasks } from '../TaskHelpers';
 import type { TaskContextType, TimeTrackingContextType } from '../types/TaskContextTypes';
 
 const TimeTrackingContext = createContext<TimeTrackingContextType | undefined>(undefined);
