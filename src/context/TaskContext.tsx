@@ -4,6 +4,7 @@ import { useTaskContext as useLocalTaskContext } from './providers/TaskContextPr
 import { useSupabaseTaskContext } from './providers/SupabaseTaskProvider';
 import { useTimeTrackingContext } from './providers/TimeTrackingProvider';
 import { useViewModeContext } from './providers/ViewModeProvider';
+import { useAuth } from './AuthContext';
 import type { Task, Project, TimeBlock, TimeTracking, Priority } from './TaskTypes';
 import type { TaskContextType, TimeTrackingContextType } from './types/TaskContextTypes';
 
