@@ -1,14 +1,14 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode, TimeTracking, TimeBlock } from '../TaskTypes';
 import { useTimeTrackingActions } from '../hooks/useTimeTrackingActions';
 import { useTimeBlockActions } from '../hooks/useTimeBlockActions';
-import { sampleTimeBlocks } from '../TaskMockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '../AuthContext';
+import * as timeTrackingService from '@/services/timeTrackingService';
+import * as timeBlockService from '@/services/timeBlockService';
+import { toast } from '@/components/ui/use-toast';
 import { useTaskContext } from './TaskContextProvider';
 import { findTaskById, getRootTasks, updateTaskInHierarchy } from '../TaskHelpers';
-
-// This provider is used when user is not authenticated
-// It stores data in localStorage as a fallback
 
 interface TimeTrackingContextType {
   timeBlocks: TimeBlock[];
@@ -27,62 +27,89 @@ interface TimeTrackingContextType {
 const TimeTrackingContext = createContext<TimeTrackingContextType | undefined>(undefined);
 
 export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { tasks, updateTask } = useTaskContext();
-  const [timeBlocks, setTimeBlocks] = useState(sampleTimeBlocks);
+  const { user, tasks, updateTask } = useTaskContext();
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [timeTrackings, setTimeTrackings] = useState<TimeTracking[]>([]);
   const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
-
+  
   useEffect(() => {
-    const storedTimeBlocks = localStorage.getItem('quire-timeblocks');
-    const storedTimeTrackings = localStorage.getItem('quire-timetrackings');
-    const storedActiveTimeTracking = localStorage.getItem('quire-active-timetracking');
-
-    if (!storedTimeBlocks) {
-      setTimeBlocks(sampleTimeBlocks);
-      localStorage.setItem('quire-timeblocks', JSON.stringify(sampleTimeBlocks));
-    } else {
-      const parsedTimeBlocks = JSON.parse(storedTimeBlocks);
-      parsedTimeBlocks.forEach((block: any) => {
-        if (block.date) block.date = new Date(block.date);
-      });
-      setTimeBlocks(parsedTimeBlocks);
-    }
-
-    if (!storedTimeTrackings) {
+    if (!user) {
+      // Reset state when user logs out
+      setTimeBlocks([]);
       setTimeTrackings([]);
-      localStorage.setItem('quire-timetrackings', JSON.stringify([]));
-    } else {
-      const parsedTimeTrackings = JSON.parse(storedTimeTrackings);
-      parsedTimeTrackings.forEach((tracking: any) => {
-        if (tracking.startTime) tracking.startTime = new Date(tracking.startTime);
-        if (tracking.endTime) tracking.endTime = new Date(tracking.endTime);
-      });
-      setTimeTrackings(parsedTimeTrackings);
+      setActiveTimeTracking(null);
+      return;
     }
 
-    if (!storedActiveTimeTracking) {
-      setActiveTimeTracking(null);
-      localStorage.setItem('quire-active-timetracking', JSON.stringify(null));
-    } else {
-      const parsedActiveTracking = JSON.parse(storedActiveTimeTracking);
-      if (parsedActiveTracking) {
-        if (parsedActiveTracking.startTime) 
-          parsedActiveTracking.startTime = new Date(parsedActiveTracking.startTime);
-        if (parsedActiveTracking.endTime) 
-          parsedActiveTracking.endTime = new Date(parsedActiveTracking.endTime);
-        setActiveTimeTracking(parsedActiveTracking);
-      }
-    }
-  }, []);
+    loadInitialData();
+  }, [user]);
 
   useEffect(() => {
-    localStorage.setItem('quire-timeblocks', JSON.stringify(timeBlocks));
-    localStorage.setItem('quire-timetrackings', JSON.stringify(timeTrackings));
-    localStorage.setItem('quire-active-timetracking', JSON.stringify(activeTimeTracking));
-  }, [timeBlocks, timeTrackings, activeTimeTracking]);
+    if (!user) return;
 
-  const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
-  const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
+    const channels = [
+      supabase.channel('public:time_trackings')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'time_trackings' }, 
+          () => loadTimeTrackings()),
+
+      supabase.channel('public:time_blocks')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'time_blocks' }, 
+          () => loadTimeBlocks())
+    ];
+
+    // Subscribe to all channels
+    Promise.all(channels.map(channel => channel.subscribe()));
+
+    return () => {
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, [user]);
+
+  const loadInitialData = async () => {
+    try {
+      await Promise.all([
+        loadTimeTrackings(),
+        loadTimeBlocks()
+      ]);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast({
+        title: "Error loading data",
+        description: "Failed to load your data. Please try refreshing the page.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadTimeTrackings = async () => {
+    try {
+      const fetchedTimeTrackings = await timeTrackingService.getTimeTrackings();
+      
+      const activeTracking = fetchedTimeTrackings.find(tracking => !tracking.endTime);
+      if (activeTracking) {
+        setActiveTimeTracking(activeTracking);
+        setTimeTrackings(fetchedTimeTrackings.filter(tracking => tracking.endTime));
+      } else {
+        setActiveTimeTracking(null);
+        setTimeTrackings(fetchedTimeTrackings);
+      }
+    } catch (error) {
+      console.error('Error loading time trackings:', error);
+    }
+  };
+
+  const loadTimeBlocks = async () => {
+    try {
+      const fetchedTimeBlocks = await timeBlockService.getTimeBlocks();
+      setTimeBlocks(fetchedTimeBlocks);
+    } catch (error) {
+      console.error('Error loading time blocks:', error);
+    }
+  };
 
   const updateTaskTimeTracked = (taskId: string, additionalMinutes: number) => {
     const task = findTaskById(taskId, getRootTasks(tasks));
@@ -106,63 +133,98 @@ export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  const startTimeTracking = (taskId: string, notes?: string) => {
-    if (activeTimeTracking) {
-      stopTimeTracking();
-    }
-    
-    const newTracking: TimeTracking = {
-      id: Math.random().toString(36).substring(2, 11),
-      taskId,
-      startTime: new Date(),
-      duration: 0,
-      notes
-    };
-    
-    setActiveTimeTracking(newTracking);
-  };
+  const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
+  const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
 
-  const stopTimeTracking = () => {
-    if (!activeTimeTracking) return;
-    
-    const endTime = new Date();
-    const startTime = new Date(activeTimeTracking.startTime);
-    const durationInMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
-    
-    const completedTracking: TimeTracking = {
-      ...activeTimeTracking,
-      endTime,
-      duration: durationInMinutes
-    };
-    
-    setTimeTrackings([...timeTrackings, completedTracking]);
-    
-    updateTaskTimeTracked(completedTracking.taskId, durationInMinutes);
-    
-    setActiveTimeTracking(null);
-  };
-
-  useEffect(() => {
-    if (!activeTimeTracking) return;
-    
-    const intervalId = setInterval(() => {
-      const now = new Date();
-      const startTime = new Date(activeTimeTracking.startTime);
-      const durationInMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
+  const startTimeTracking = async (taskId: string, notes?: string) => {
+    try {
+      if (activeTimeTracking) {
+        await stopTimeTracking();
+      }
       
-      setActiveTimeTracking(prev => {
-        if (prev) {
-          return {
-            ...prev,
-            duration: durationInMinutes
-          };
-        }
-        return null;
-      });
-    }, 60000);
-    
-    return () => clearInterval(intervalId);
-  }, [activeTimeTracking]);
+      const newTracking = await timeTrackingService.startTimeTracking(taskId, notes);
+      setActiveTimeTracking(newTracking);
+    } catch (error) {
+      console.error('Error starting time tracking:', error);
+      throw error;
+    }
+  };
+
+  const stopTimeTracking = async () => {
+    try {
+      if (activeTimeTracking) {
+        await timeTrackingService.stopTimeTracking(activeTimeTracking.id, activeTimeTracking.taskId);
+        await loadTimeTrackings();
+        setActiveTimeTracking(null);
+      }
+    } catch (error) {
+      console.error('Error stopping time tracking:', error);
+      throw error;
+    }
+  };
+
+  const addTimeTracking = async (timeTracking: Omit<TimeTracking, 'id'>) => {
+    try {
+      const newTracking = await timeTrackingService.addManualTimeTracking(timeTracking);
+      timeTrackingActions.addTimeTracking(newTracking);
+      
+      const task = findTaskById(timeTracking.taskId, getRootTasks(tasks));
+      if (task) {
+        const updatedTask = {
+          ...task,
+          timeTracked: (task.timeTracked || 0) + timeTracking.duration
+        };
+        updateTask(updatedTask);
+      }
+    } catch (error) {
+      console.error('Error adding time tracking:', error);
+    }
+  };
+
+  const updateTimeTracking = async (timeTracking: TimeTracking) => {
+    try {
+      await timeTrackingService.updateTimeTracking(timeTracking);
+      timeTrackingActions.updateTimeTracking(timeTracking);
+    } catch (error) {
+      console.error('Error updating time tracking:', error);
+    }
+  };
+
+  const deleteTimeTracking = async (timeTrackingId: string) => {
+    try {
+      await timeTrackingService.deleteTimeTracking(timeTrackingId);
+      timeTrackingActions.deleteTimeTracking(timeTrackingId);
+    } catch (error) {
+      console.error('Error deleting time tracking:', error);
+    }
+  };
+
+  const addTimeBlock = async (timeBlock: Omit<TimeBlock, 'id'>) => {
+    try {
+      const newTimeBlock = await timeBlockService.createTimeBlock(timeBlock);
+      timeBlockActions.addTimeBlock(newTimeBlock);
+    } catch (error) {
+      console.error('Error adding time block:', error);
+    }
+  };
+
+  const updateTimeBlock = async (timeBlock: TimeBlock) => {
+    try {
+      await timeBlockService.updateTimeBlock(timeBlock);
+      timeBlockActions.updateTimeBlock(timeBlock);
+    } catch (error) {
+      console.error('Error updating time block:', error);
+    }
+  };
+
+  const deleteTimeBlock = async (timeBlockId: string) => {
+    try {
+      await timeBlockService.deleteTimeBlock(timeBlockId);
+      timeBlockActions.deleteTimeBlock(timeBlockId);
+    } catch (error) {
+      console.error('Error deleting time block:', error);
+    }
+  };
 
   const value: TimeTrackingContextType = {
     timeBlocks,
@@ -170,8 +232,12 @@ export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ childr
     activeTimeTracking,
     startTimeTracking,
     stopTimeTracking,
-    ...timeBlockActions,
-    ...timeTrackingActions,
+    addTimeTracking,
+    updateTimeTracking,
+    deleteTimeTracking,
+    addTimeBlock,
+    updateTimeBlock,
+    deleteTimeBlock,
   };
 
   return (

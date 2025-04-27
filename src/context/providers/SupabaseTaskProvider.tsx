@@ -75,39 +75,48 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
   useEffect(() => {
     if (!user) return;
 
-    const projectsChannel = supabase
-      .channel('public:projects')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'projects' }, 
-        () => loadProjects())
-      .subscribe();
+    const channels = [
+      supabase.channel('public:projects')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'projects' }, 
+          (payload) => {
+            console.log('Project change:', payload);
+            loadProjects();
+          }),
 
-    const tasksChannel = supabase
-      .channel('public:tasks')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'tasks' }, 
-        () => loadTasks())
-      .subscribe();
+      supabase.channel('public:tasks')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'tasks' }, 
+          (payload) => {
+            console.log('Task change:', payload);
+            loadTasks();
+          }),
 
-    const timeTrackingsChannel = supabase
-      .channel('public:time_trackings')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'time_trackings' }, 
-        () => loadTimeTrackings())
-      .subscribe();
+      supabase.channel('public:time_trackings')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'time_trackings' }, 
+          (payload) => {
+            console.log('Time tracking change:', payload);
+            loadTimeTrackings();
+          }),
 
-    const timeBlocksChannel = supabase
-      .channel('public:time_blocks')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'time_blocks' }, 
-        () => loadTimeBlocks())
-      .subscribe();
+      supabase.channel('public:time_blocks')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'time_blocks' }, 
+          (payload) => {
+            console.log('Time block change:', payload);
+            loadTimeBlocks();
+          })
+    ];
 
+    // Subscribe to all channels
+    Promise.all(channels.map(channel => channel.subscribe()));
+
+    // Cleanup: unsubscribe from all channels
     return () => {
-      supabase.removeChannel(projectsChannel);
-      supabase.removeChannel(tasksChannel);
-      supabase.removeChannel(timeTrackingsChannel);
-      supabase.removeChannel(timeBlocksChannel);
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
     };
   }, [user]);
 
@@ -201,19 +210,21 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const addProjectDb = async (project: Omit<Project, 'id' | 'isExpanded'>) => {
     try {
-      const newProject = await projectService.createProject(project);
-      projectActions.addProject(newProject);
+      await projectService.createProject(project);
+      // No need to update local state, real-time subscription will handle it
     } catch (error) {
       console.error('Error adding project:', error);
+      throw error;
     }
   };
 
   const updateProjectDb = async (project: Project) => {
     try {
       await projectService.updateProject(project);
-      projectActions.updateProject(project);
+      // No need to update local state, real-time subscription will handle it
     } catch (error) {
       console.error('Error updating project:', error);
+      throw error;
     }
   };
 
