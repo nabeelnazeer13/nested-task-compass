@@ -5,6 +5,9 @@ import { sampleProjects, sampleTasks } from '../TaskMockData';
 import { useProjectActions } from '../hooks/useProjectActions';
 import { useTaskActions } from '../hooks/useTaskActions';
 
+// This provider is used when user is not authenticated
+// It stores data in localStorage as a fallback
+
 interface TaskContextProviderType {
   projects: Project[];
   tasks: Task[];
@@ -21,8 +24,8 @@ interface TaskContextProviderType {
 const TaskContext = createContext<TaskContextProviderType | undefined>(undefined);
 
 export const TaskContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const storedProjects = localStorage.getItem('quire-projects');

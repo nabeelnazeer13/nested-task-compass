@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode, TimeTracking, TimeBlock } from '../TaskTypes';
 import { useTimeTrackingActions } from '../hooks/useTimeTrackingActions';
@@ -5,6 +6,9 @@ import { useTimeBlockActions } from '../hooks/useTimeBlockActions';
 import { sampleTimeBlocks } from '../TaskMockData';
 import { useTaskContext } from './TaskContextProvider';
 import { findTaskById, getRootTasks, updateTaskInHierarchy } from '../TaskHelpers';
+
+// This provider is used when user is not authenticated
+// It stores data in localStorage as a fallback
 
 interface TimeTrackingContextType {
   timeBlocks: TimeBlock[];

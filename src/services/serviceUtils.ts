@@ -48,11 +48,11 @@ export const processSupabaseData = <T extends Record<string, any>>(data: T): T =
   const dateFields = ['due_date', 'end_date', 'date', 'start_time', 'end_time', 'created_at', 'updated_at'];
   
   dateFields.forEach(field => {
-    if (field in processed && processed[field] && typeof processed[field] === 'string') {
+    if (field in processed && processed[field as keyof typeof processed] && typeof processed[field as keyof typeof processed] === 'string') {
       try {
         // Only convert if it looks like an ISO timestamp
-        if ((processed[field] as string).match(/^\d{4}-\d{2}-\d{2}T/)) {
-          (processed as any)[field] = new Date(processed[field] as string);
+        if ((processed[field as keyof typeof processed] as string).match(/^\d{4}-\d{2}-\d{2}T/)) {
+          (processed as any)[field] = new Date(processed[field as keyof typeof processed] as string);
         }
       } catch (e) {
         console.warn(`Failed to convert ${field} to Date:`, e);
