@@ -83,7 +83,8 @@ export const timeBlocksCache = new Cache<any>({ ttl: 300000, capacity: 500 });
 export const timeTrackingsCache = new Cache<any>({ ttl: 300000, capacity: 500 });
 
 export function getCacheKey(operation: string, params?: any): string {
-  const { data: { user } } = supabase.auth.getSession();
-  const userId = user?.id || 'anonymous';
-  return `${userId}:${operation}:${JSON.stringify(params)}`;
+  // Fix: We shouldn't use the session data synchronously here as it's a Promise
+  // Instead, use a consistent format that doesn't depend on the current user
+  // If we need user-specific cache keys, we should make getCacheKey async
+  return `cache:${operation}:${JSON.stringify(params)}`;
 }
