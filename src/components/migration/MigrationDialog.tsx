@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { Progress } from '@/components/ui/progress';
 import { 
   migrateDataToSupabase, 
   isMigrationNeeded, 
@@ -30,6 +31,18 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
 }) => {
   const { user } = useAuth();
   const [isMigrating, setIsMigrating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [migrationStatus, setMigrationStatus] = useState('');
+  
+  // Check migration status when dialog opens
+  useEffect(() => {
+    if (open) {
+      const migrationNeeded = isMigrationNeeded();
+      if (!migrationNeeded) {
+        onOpenChange(false);
+      }
+    }
+  }, [open, onOpenChange]);
   
   const handleMigrateData = async () => {
     if (!user) {
@@ -42,12 +55,38 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
     }
     
     setIsMigrating(true);
-    const success = await migrateDataToSupabase();
-    setIsMigrating(false);
+    setProgress(0);
+    setMigrationStatus('Starting migration...');
     
-    if (success) {
-      markMigrationCompleted();
-      onMigrationComplete();
+    try {
+      const success = await migrateDataToSupabase((status, progressValue) => {
+        setMigrationStatus(status);
+        setProgress(progressValue);
+      });
+      
+      if (success) {
+        markMigrationCompleted();
+        toast({
+          title: "Migration successful",
+          description: "Your data has been successfully migrated to the cloud.",
+        });
+        onMigrationComplete();
+      } else {
+        toast({
+          title: "Migration failed",
+          description: "There was an error migrating your data. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Migration error:", error);
+      toast({
+        title: "Migration failed",
+        description: "There was an error migrating your data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMigrating(false);
       onOpenChange(false);
     }
   };
@@ -60,10 +99,8 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
     onOpenChange(false);
   };
   
-  const migrationNeeded = isMigrationNeeded();
-  
   return (
-    <Dialog open={open && migrationNeeded} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Migrate Your Data</DialogTitle>
@@ -86,12 +123,20 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
           <p className="mt-4 text-sm">
             This ensures your data is securely stored in the cloud and available across devices.
           </p>
+          
+          {isMigrating && (
+            <div className="mt-4 space-y-2">
+              <Progress value={progress} className="w-full" />
+              <p className="text-xs text-muted-foreground">{migrationStatus}</p>
+            </div>
+          )}
         </div>
         
         <DialogFooter>
           <Button
             variant="outline"
             onClick={handleSkip}
+            disabled={isMigrating}
           >
             Skip for now
           </Button>

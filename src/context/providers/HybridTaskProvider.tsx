@@ -8,26 +8,19 @@ import { ViewModeProvider } from './ViewModeProvider';
 import { useAuth } from '../AuthContext';
 import MigrationDialog from '@/components/migration/MigrationDialog';
 import { toast } from '@/components/ui/use-toast';
+import { isMigrationNeeded } from '@/services/migrationService';
 
 export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const [migrationCompleted, setMigrationCompleted] = useState(false);
-  const [hasLocalData, setHasLocalData] = useState(false);
 
-  // Check if migration dialog should be shown
+  // Check if migration dialog should be shown when user logs in
   useEffect(() => {
     if (user && !authLoading) {
-      // Check if we have local data that needs migration
-      const hasProjects = !!localStorage.getItem('quire-projects'); 
-      const hasTasks = !!localStorage.getItem('quire-tasks');
-      const hasTimeBlocks = !!localStorage.getItem('quire-timeblocks');
-      const hasTimeTrackings = !!localStorage.getItem('quire-timetrackings');
-      
-      const shouldShowMigration = (hasProjects || hasTasks || hasTimeBlocks || hasTimeTrackings);
-      setHasLocalData(shouldShowMigration);
-      
-      if (shouldShowMigration && !migrationCompleted) {
+      // Only show the migration dialog if we haven't completed a migration yet
+      // and there's local data to migrate
+      if (!migrationCompleted && isMigrationNeeded()) {
         setShowMigrationDialog(true);
       }
     }
@@ -45,7 +38,7 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const handleDismissMigration = () => {
     setShowMigrationDialog(false);
-    if (hasLocalData) {
+    if (isMigrationNeeded()) {
       toast({
         title: "Migration Skipped",
         description: "You can migrate your local data later from settings.",
