@@ -239,13 +239,10 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  const addTaskDb = async (task: Omit<Task, "id" | "children" | "isExpanded" | "timeTracked">) => {
+  const addTaskDb = async (task: Omit<Task, 'id' | 'children' | 'isExpanded' | 'timeTracked'>) => {
     try {
       const newTask = await taskService.createTask(task);
-      taskActions.addTask({
-        ...newTask,
-        children: []
-      });
+      taskActions.addTask(newTask);
     } catch (error) {
       console.error('Error adding task:', error);
     }
