@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ReactNode } from 'react';
 import { TaskContextProvider } from './TaskContextProvider';
@@ -54,32 +53,25 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
     );
   }
 
-  // First wrap everything in ViewModeProvider
+  const TaskProvider = user ? SupabaseTaskProvider : TaskContextProvider;
+
   return (
     <ErrorBoundary>
       <ViewModeProvider>
-        {user ? (
-          // For authenticated users, use Supabase provider
-          <SupabaseTaskProvider>
-            <TimeTrackingProvider>
-              <>
-                {children}
+        <TaskProvider>
+          <TimeTrackingProvider>
+            <>
+              {children}
+              {showMigrationDialog && (
                 <MigrationDialog 
                   open={showMigrationDialog} 
                   onOpenChange={handleDismissMigration}
                   onMigrationComplete={handleMigrationComplete}
                 />
-              </>
-            </TimeTrackingProvider>
-          </SupabaseTaskProvider>
-        ) : (
-          // For unauthenticated users, use local storage provider
-          <TaskContextProvider>
-            <TimeTrackingProvider>
-              {children}
-            </TimeTrackingProvider>
-          </TaskContextProvider>
-        )}
+              )}
+            </>
+          </TimeTrackingProvider>
+        </TaskProvider>
       </ViewModeProvider>
     </ErrorBoundary>
   );

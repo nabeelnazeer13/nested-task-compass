@@ -6,28 +6,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
 import * as timeTrackingService from '@/services/timeTrackingService';
 import * as timeBlockService from '@/services/timeBlockService';
-import { toast } from '@/components/ui/use-toast';
-import { useTaskContext } from './TaskContextProvider';
-import { findTaskById, getRootTasks, updateTaskInHierarchy } from '../TaskHelpers';
-
-interface TimeTrackingContextType {
-  timeBlocks: TimeBlock[];
-  timeTrackings: TimeTracking[];
-  activeTimeTracking: TimeTracking | null;
-  startTimeTracking: (taskId: string, notes?: string) => void;
-  stopTimeTracking: () => void;
-  addTimeTracking: (timeTracking: Omit<TimeTracking, 'id'>) => void;
-  updateTimeTracking: (timeTracking: TimeTracking) => void;
-  deleteTimeTracking: (timeTrackingId: string) => void;
-  addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => void;
-  updateTimeBlock: (timeBlock: TimeBlock) => void;
-  deleteTimeBlock: (timeBlockId: string) => void;
-}
+import { withTaskContext } from '../hocs/withTaskContext';
+import type { TaskContextType, TimeTrackingContextType } from '../types/TaskContextTypes';
 
 const TimeTrackingContext = createContext<TimeTrackingContextType | undefined>(undefined);
 
-export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { tasks, updateTask } = useTaskContext();
+interface TimeTrackingProviderProps {
+  children: ReactNode;
+  taskContext: TaskContextType;
+}
+
+const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({ 
+  children, 
+  taskContext 
+}) => {
+  const { tasks, updateTask } = taskContext;
   const { user } = useAuth();
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [timeTrackings, setTimeTrackings] = useState<TimeTracking[]>([]);
@@ -245,6 +238,8 @@ export const TimeTrackingProvider: React.FC<{ children: ReactNode }> = ({ childr
     </TimeTrackingContext.Provider>
   );
 };
+
+export const TimeTrackingProvider = withTaskContext(TimeTrackingProviderBase);
 
 export const useTimeTrackingContext = () => {
   const context = useContext(TimeTrackingContext);
