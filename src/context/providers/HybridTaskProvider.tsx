@@ -17,31 +17,15 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
   const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const [migrationCompleted, setMigrationCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Check if migration dialog should be shown when user logs in
   useEffect(() => {
-    const initializeProvider = async () => {
-      try {
-        if (user && !authLoading) {
-          if (!migrationCompleted && isMigrationNeeded()) {
-            setShowMigrationDialog(true);
-          }
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        setError(errorMessage);
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+    if (user && !authLoading) {
+      if (!migrationCompleted && isMigrationNeeded()) {
+        setShowMigrationDialog(true);
       }
-    };
-
-    initializeProvider();
+    }
+    setIsLoading(false);
   }, [user, authLoading, migrationCompleted]);
 
   const handleMigrationComplete = () => {
@@ -50,7 +34,6 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
     toast({
       title: "Data Migration Successful",
       description: "Your data has been successfully migrated to the cloud.",
-      variant: "default",
     });
   };
 
@@ -60,7 +43,6 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
       toast({
         title: "Migration Skipped",
         description: "You can migrate your local data later from settings.",
-        variant: "default",
       });
     }
   };
@@ -73,51 +55,38 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 text-center">
-        <p className="text-destructive font-semibold">Error loading application</p>
-        <p className="text-muted-foreground">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  // If a user is logged in, use the Supabase provider, otherwise use the local storage provider
+  // For authenticated users, use Supabase provider with TimeTrackingProvider
   if (user) {
     return (
       <ErrorBoundary>
-        <SupabaseTaskProvider>
-          <ViewModeProvider>
-            <>
-              {children}
-              <MigrationDialog 
-                open={showMigrationDialog} 
-                onOpenChange={handleDismissMigration}
-                onMigrationComplete={handleMigrationComplete}
-              />
-            </>
-          </ViewModeProvider>
-        </SupabaseTaskProvider>
+        <ViewModeProvider>
+          <SupabaseTaskProvider>
+            <TimeTrackingProvider>
+              <>
+                {children}
+                <MigrationDialog 
+                  open={showMigrationDialog} 
+                  onOpenChange={handleDismissMigration}
+                  onMigrationComplete={handleMigrationComplete}
+                />
+              </>
+            </TimeTrackingProvider>
+          </SupabaseTaskProvider>
+        </ViewModeProvider>
       </ErrorBoundary>
     );
   }
 
-  // Fallback to local storage when not authenticated
+  // For unauthenticated users, use local storage provider
   return (
     <ErrorBoundary>
-      <TaskContextProvider>
-        <TimeTrackingProvider>
-          <ViewModeProvider>
+      <ViewModeProvider>
+        <TaskContextProvider>
+          <TimeTrackingProvider>
             {children}
-          </ViewModeProvider>
-        </TimeTrackingProvider>
-      </TaskContextProvider>
+          </TimeTrackingProvider>
+        </TaskContextProvider>
+      </ViewModeProvider>
     </ErrorBoundary>
   );
 };

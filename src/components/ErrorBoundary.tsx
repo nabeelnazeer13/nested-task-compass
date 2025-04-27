@@ -32,14 +32,20 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    
+    // Add specific handling for context errors
+    const errorMessage = error.message.includes('Context')
+      ? `Context Error: ${error.message}. This usually means a provider is missing or incorrectly configured.`
+      : error.message;
+    
     this.setState({
-      errorInfo
+      errorInfo,
+      error: new Error(errorMessage)
     });
     
-    // Log the error to a service or analytics platform here
     toast({
       title: "Application Error",
-      description: `An error occurred: ${error.message}`,
+      description: errorMessage,
       variant: "destructive",
     });
   }
