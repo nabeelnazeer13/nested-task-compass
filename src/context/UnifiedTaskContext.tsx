@@ -11,5 +11,3 @@ export const useUnifiedTaskContext = () => {
   const { user } = useAuth();
   return user ? useSupabaseTaskContext() : useLocalTaskContext();
 };
-
-export default useUnifiedTaskContext;
