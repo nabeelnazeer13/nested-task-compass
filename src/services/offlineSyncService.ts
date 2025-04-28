@@ -336,7 +336,7 @@ export class OfflineSyncService {
   private registerBackgroundSync(): void {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // TypeScript check for the sync API
+        // Fix: Check if sync API exists before using it
         if ('sync' in registration) {
           registration.sync.register('sync-tasks')
             .then(() => {
@@ -425,13 +425,13 @@ export const useOfflineSync = () => {
       setPendingCount(count);
     };
     
-    // Check count initially
-    checkPendingCount();
-    
     // Subscribe to updates
     const unsubscribe = offlineSyncService.addSyncListener(count => {
       setPendingCount(count);
     });
+    
+    // Check count initially
+    checkPendingCount();
     
     return unsubscribe;
   }, []);

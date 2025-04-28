@@ -171,7 +171,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsSyncing(true);
       const registration = await navigator.serviceWorker.ready;
       
-      if ('sync' in registration) {
+      // Fix: Check if the sync API exists before using it
+      if (registration.sync) {
         await registration.sync.register('sync-tasks');
         console.log('Background sync requested');
         return true;
