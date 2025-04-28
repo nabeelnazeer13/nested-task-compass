@@ -139,9 +139,14 @@ export class OfflineSyncService {
   private registerBackgroundSync(): void {
     if ('serviceWorker' in navigator && 'SyncManager' in window) {
       navigator.serviceWorker.ready.then((registration) => {
-        registration.sync.register('sync-tasks').catch((error) => {
-          console.error('Error registering background sync:', error);
-        });
+        // Check if the sync API is available
+        if ('sync' in registration) {
+          // TypeScript doesn't recognize the sync API directly
+          // Using any to bypass the TypeScript error
+          (registration as any).sync.register('sync-tasks').catch((error: Error) => {
+            console.error('Error registering background sync:', error);
+          });
+        }
       });
     }
   }

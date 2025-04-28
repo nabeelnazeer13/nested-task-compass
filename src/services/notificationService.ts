@@ -6,7 +6,6 @@ export interface NotificationOptions {
   body: string;
   icon?: string;
   data?: any;
-  actions?: NotificationAction[];
   requireInteraction?: boolean;
   tag?: string;
 }
@@ -60,7 +59,6 @@ export async function sendNotification(options: NotificationOptions): Promise<bo
         body: options.body,
         icon: options.icon || '/icons/icon-192x192.png',
         data: options.data,
-        actions: options.actions,
         requireInteraction: options.requireInteraction || false,
         tag: options.tag
       });

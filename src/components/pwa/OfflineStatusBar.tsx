@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { usePWA } from '@/context/PWAContext';
-import { WifiOff, CloudSync, Cloud } from 'lucide-react';
+import { WifiOff, CloudSun, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 
@@ -31,7 +31,7 @@ export const OfflineStatusBar = () => {
     }`}>
       <div className="flex items-center space-x-2">
         {isOnline ? (
-          <CloudSync size={18} className="text-amber-600" />
+          <CloudSun size={18} className="text-amber-600" />
         ) : (
           <WifiOff size={18} className="text-red-600" />
         )}
