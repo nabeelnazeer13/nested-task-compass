@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { requestNotificationPermission, sendNotification, NotificationOptions } from '@/services/notificationService';
 import { offlineSyncService } from '@/services/offlineSyncService';
 import { useOnlineStatus, OnlineStatus } from '@/hooks/use-online-status';
+import { syncManager } from '@/services/syncManager';
 
 interface PWAContextType {
   isOnline: boolean;
@@ -15,6 +16,8 @@ interface PWAContextType {
   sendNotification: (options: NotificationOptions) => Promise<boolean>;
   pendingChangesCount: number;
   syncPendingChanges: () => Promise<void>;
+  triggerBackgroundSync: () => Promise<boolean>;
+  isSyncing: boolean;
   newVersionAvailable: boolean;
   updateServiceWorker: () => Promise<void>;
 }
@@ -32,6 +35,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     'Notification' in window ? Notification.permission : 'denied'
   );
   const [pendingChangesCount, setPendingChangesCount] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [newVersionAvailable, setNewVersionAvailable] = useState<boolean>(false);
   const [waitingServiceWorker, setWaitingServiceWorker] = useState<ServiceWorker | null>(null);
 
@@ -146,10 +150,41 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const syncHandler = async () => {
     if (isOnline) {
-      await offlineSyncService.syncPendingChanges();
+      setIsSyncing(true);
+      try {
+        await offlineSyncService.syncPendingChanges();
+      } finally {
+        setIsSyncing(false);
+      }
     } else {
       console.log("Can't sync while offline");
       return Promise.reject(new Error("Cannot sync while offline"));
+    }
+  };
+  
+  const triggerBackgroundSync = async (): Promise<boolean> => {
+    if (!('serviceWorker' in navigator)) {
+      return false;
+    }
+    
+    try {
+      setIsSyncing(true);
+      const registration = await navigator.serviceWorker.ready;
+      
+      if ('sync' in registration) {
+        await registration.sync.register('sync-tasks');
+        console.log('Background sync requested');
+        return true;
+      } else {
+        console.log('Background sync API not supported, falling back to manual sync');
+        await offlineSyncService.syncPendingChanges();
+        return true;
+      }
+    } catch (error) {
+      console.error('Error triggering background sync:', error);
+      return false;
+    } finally {
+      setIsSyncing(false);
     }
   };
   
@@ -172,6 +207,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sendNotification,
     pendingChangesCount,
     syncPendingChanges: syncHandler,
+    triggerBackgroundSync,
+    isSyncing,
     newVersionAvailable,
     updateServiceWorker,
   };

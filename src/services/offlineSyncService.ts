@@ -6,7 +6,8 @@ import * as taskService from '@/services/taskService';
 import * as projectService from '@/services/projectService';
 import * as timeTrackingService from '@/services/timeTrackingService';
 import * as timeBlockService from '@/services/timeBlockService';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { syncManager } from './syncManager';
 
 /**
  * Enhanced offline sync service using IndexedDB for storage
@@ -206,8 +207,9 @@ export class OfflineSyncService {
   
   /**
    * Process a single change
+   * This method is exposed for use by the SyncManager
    */
-  private async processSingleChange(change: PendingOperation): Promise<void> {
+  public async processSingleChange(change: PendingOperation): Promise<boolean> {
     try {
       // Update attempt count
       change.attempts += 1;
@@ -234,13 +236,17 @@ export class OfflineSyncService {
       if (success) {
         await indexedDBService.deletePendingOperation(change.id);
         console.log(`Successfully synced change: ${change.id}`);
+        return true;
       } else if (change.attempts >= 5) {
         // After 5 failed attempts, mark as requiring manual resolution
         console.warn(`Sync failed after ${change.attempts} attempts for change: ${change.id}`);
         // Here you could implement a conflict resolution UI
+        return false;
       }
+      return false;
     } catch (error) {
       console.error(`Error syncing change ${change.id}:`, error);
+      return false;
     }
   }
   
@@ -328,18 +334,31 @@ export class OfflineSyncService {
    * Register for background sync if the API is available
    */
   private registerBackgroundSync(): void {
-    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Check if the sync API is available
+        // TypeScript check for the sync API
         if ('sync' in registration) {
-          // TypeScript doesn't recognize the sync API directly
-          // Using any to bypass the TypeScript error
-          (registration as any).sync.register('sync-tasks').catch((error: Error) => {
-            console.error('Error registering background sync:', error);
-          });
+          registration.sync.register('sync-tasks')
+            .then(() => {
+              console.log('Background sync registered successfully');
+            })
+            .catch((error) => {
+              console.error('Error registering background sync:', error);
+            });
+        } else {
+          console.log('Background Sync API not supported');
         }
+      }).catch(error => {
+        console.error('Error accessing service worker registration:', error);
       });
     }
+  }
+
+  /**
+   * Get the current count of pending changes
+   */
+  public async getPendingOperations(): Promise<PendingOperation[]> {
+    return await indexedDBService.getPendingOperations();
   }
 
   /**
@@ -352,9 +371,26 @@ export class OfflineSyncService {
   
   /**
    * Force sync all pending changes with the server
+   * Now uses the SyncManager for better retry handling
    */
-  public syncPendingChanges(): Promise<void> {
-    return this.attemptSync();
+  public async syncPendingChanges(): Promise<void> {
+    if (!this.isOnline) {
+      console.log('Cannot sync while offline');
+      return;
+    }
+    
+    console.log('Manual sync triggered, using SyncManager');
+    const result = await syncManager.syncAll();
+    console.log(`Sync complete: ${result.success} succeeded, ${result.failed} failed`);
+    this.notifySyncListeners();
+  }
+  
+  /**
+   * Delete a pending operation
+   */
+  public async deletePendingOperation(id: string): Promise<void> {
+    await indexedDBService.deletePendingOperation(id);
+    this.notifySyncListeners();
   }
   
   /**
@@ -381,6 +417,7 @@ export const offlineSyncService = new OfflineSyncService();
 // Hook to expose online status and offline operations
 export const useOfflineSync = () => {
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   
   useEffect(() => {
     const checkPendingCount = async () => {
@@ -399,9 +436,19 @@ export const useOfflineSync = () => {
     return unsubscribe;
   }, []);
   
+  const syncNow = async () => {
+    setIsSyncing(true);
+    try {
+      await offlineSyncService.syncPendingChanges();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+  
   return {
     isOnline: offlineSyncService.isAppOnline(),
     pendingChanges: pendingCount,
-    syncNow: () => offlineSyncService.syncPendingChanges(),
+    syncNow,
+    isSyncing
   };
 };

@@ -119,46 +119,109 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Handle background sync for offline data
+// Enhanced background sync for offline data
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-tasks') {
-    event.waitUntil(syncTasks());
+    event.waitUntil(syncPendingOperations());
   }
 });
 
-async function syncTasks() {
+async function syncPendingOperations() {
+  console.log('Background sync started');
+  
   try {
-    const cache = await caches.open('offline-tasks');
+    // Attempt to get all clients
+    const clients = await self.clients.matchAll({ type: 'window' });
+    
+    // Message a client to handle the sync (if any are available)
+    if (clients.length > 0) {
+      clients[0].postMessage({ type: 'BACKGROUND_SYNC_STARTED' });
+      
+      // Wait for a response or timeout
+      const timeout = setTimeout(() => {
+        console.log('Background sync timed out waiting for client response');
+        clients[0].postMessage({ type: 'BACKGROUND_SYNC_COMPLETE', success: false });
+      }, 30000); // 30 second timeout
+      
+      // Listen for completion message
+      self.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'BACKGROUND_SYNC_DONE') {
+          clearTimeout(timeout);
+          console.log('Background sync completed successfully');
+          clients[0].postMessage({ type: 'BACKGROUND_SYNC_COMPLETE', success: true });
+        }
+      }, { once: true });
+      
+    } else {
+      // No clients available, use the offline cache fallback
+      console.log('No active clients, using fallback sync method');
+      await syncFromServiceWorker();
+    }
+  } catch (error) {
+    console.error('Error during background sync:', error);
+  }
+}
+
+async function syncFromServiceWorker() {
+  try {
+    const cache = await caches.open('offline-operations');
     const requests = await cache.keys();
     
-    const syncPromises = requests.map(async (request) => {
-      const response = await cache.match(request);
-      if (!response) return;
-      
-      const data = await response.json();
-      
-      // Attempt to send the data to the server
+    for (const request of requests) {
       try {
-        const serverResponse = await fetch(request.url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
+        const response = await cache.match(request);
+        if (!response) continue;
         
-        if (serverResponse.ok) {
-          // If successful, remove from offline cache
-          await cache.delete(request);
+        const data = await response.json();
+        
+        // Attempt to send the data to the server with retry
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = 5;
+        
+        while (!success && attempts < maxAttempts) {
+          attempts++;
+          
+          try {
+            // Calculate exponential backoff delay
+            const delay = Math.min(1000 * (2 ** attempts) + Math.random() * 1000, 30000);
+            
+            if (attempts > 1) {
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            
+            const serverResponse = await fetch(request.url, {
+              method: request.method || 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...request.headers
+              },
+              body: JSON.stringify(data),
+            });
+            
+            if (serverResponse.ok) {
+              // If successful, remove from offline cache
+              await cache.delete(request);
+              success = true;
+              console.log(`Sync operation successful after ${attempts} attempt(s)`);
+            } else {
+              console.log(`Server returned error status: ${serverResponse.status}`);
+            }
+          } catch (fetchError) {
+            console.error(`Sync attempt ${attempts} failed:`, fetchError);
+          }
+        }
+        
+        if (!success) {
+          console.error(`Failed to sync operation after ${maxAttempts} attempts`);
+          // The operation remains in the cache for future sync attempts
         }
       } catch (error) {
-        console.error('Failed to sync task:', error);
+        console.error('Error processing cached operation:', error);
       }
-    });
-    
-    await Promise.all(syncPromises);
+    }
   } catch (error) {
-    console.error('Error during task synchronization:', error);
+    console.error('Error during service worker sync:', error);
   }
 }
 
