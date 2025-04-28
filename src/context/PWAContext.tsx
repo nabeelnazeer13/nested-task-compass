@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { requestNotificationPermission, sendNotification, NotificationOptions } from '@/services/notificationService';
 import { offlineSyncService } from '@/services/offlineSyncService';
@@ -40,23 +39,18 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [waitingServiceWorker, setWaitingServiceWorker] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
-    // Check if running as installed PWA
     if (window.matchMedia('(display-mode: standalone)').matches || 
         (window.navigator as any).standalone === true) {
       setIsPWA(true);
     }
 
-    // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent default browser install prompt
       e.preventDefault();
-      // Save the event for later use
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Listen for appinstalled event
     const handleAppInstalled = () => {
       setIsInstallable(false);
       setIsPWA(true);
@@ -65,21 +59,17 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Track pending offline changes
     const checkPendingChanges = async () => {
       const count = await offlineSyncService.getPendingOperationsCount();
       setPendingChangesCount(count);
     };
     
-    // Set up listener for pending changes
     const unsubscribe = offlineSyncService.addSyncListener(count => {
       setPendingChangesCount(count);
     });
     
-    // Check initially
     checkPendingChanges();
     
-    // Listen for service worker updates
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
         registration.addEventListener('updatefound', () => {
@@ -96,7 +86,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       });
       
-      // Detect controller change
       let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!refreshing) {
@@ -106,7 +95,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
-    // Clean up
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
@@ -120,13 +108,10 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Show the installation prompt
     deferredPrompt.prompt();
 
-    // Wait for the user to respond to the prompt
     const choiceResult = await deferredPrompt.userChoice;
     
-    // We no longer need the prompt regardless of outcome
     setDeferredPrompt(null);
     
     if (choiceResult.outcome === 'accepted') {
@@ -171,7 +156,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsSyncing(true);
       const registration = await navigator.serviceWorker.ready;
       
-      // Fix: Check if the sync API exists before using it
       if (registration.sync) {
         await registration.sync.register('sync-tasks');
         console.log('Background sync requested');
@@ -191,7 +175,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const updateServiceWorker = async () => {
     if (waitingServiceWorker) {
-      // Send a message to the waiting service worker to skip waiting
       waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
       setNewVersionAvailable(false);
     }

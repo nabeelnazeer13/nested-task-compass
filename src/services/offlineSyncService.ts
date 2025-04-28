@@ -336,8 +336,8 @@ export class OfflineSyncService {
   private registerBackgroundSync(): void {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Fix: Check if sync API exists before using it
-        if ('sync' in registration) {
+        // Check if sync API exists before using it
+        if (registration.sync) {
           registration.sync.register('sync-tasks')
             .then(() => {
               console.log('Background sync registered successfully');
