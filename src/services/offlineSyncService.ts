@@ -6,6 +6,7 @@ import * as taskService from '@/services/taskService';
 import * as projectService from '@/services/projectService';
 import * as timeTrackingService from '@/services/timeTrackingService';
 import * as timeBlockService from '@/services/timeBlockService';
+import React, { useState, useEffect } from 'react';
 
 /**
  * Enhanced offline sync service using IndexedDB for storage
@@ -379,9 +380,9 @@ export const offlineSyncService = new OfflineSyncService();
 
 // Hook to expose online status and offline operations
 export const useOfflineSync = () => {
-  const [pendingCount, setPendingCount] = React.useState<number>(0);
+  const [pendingCount, setPendingCount] = useState<number>(0);
   
-  React.useEffect(() => {
+  useEffect(() => {
     const checkPendingCount = async () => {
       const count = await offlineSyncService.getPendingOperationsCount();
       setPendingCount(count);

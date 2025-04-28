@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Task, TimeBlock, TimeTracking, ReactNode } from '../TaskTypes';
 import { useProjectActions } from '../hooks/useProjectActions';
@@ -62,7 +63,8 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
   const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
   const timeBlockActions = useTimeBlockActions(timeBlocks, setTimeBlocks);
 
-  const isOnline = useOnlineStatus();
+  const networkStatus = useOnlineStatus();
+  const isOnline = networkStatus.isOnline;
   const [pendingOperations, setPendingOperations] = useState<Array<{
     type: 'add' | 'update' | 'delete';
     entity: 'task' | 'project' | 'timeTracking' | 'timeBlock';
@@ -548,7 +550,7 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     addTimeBlock: addTimeBlockDb,
     updateTimeBlock: updateTimeBlockDb,
     deleteTimeBlock: deleteTimeBlockDb,
-    isOnline,
+    isOnline: isOnline,
     pendingOperations: pendingOperations.length,
   };
 
