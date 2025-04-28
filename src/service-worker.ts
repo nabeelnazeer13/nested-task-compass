@@ -4,7 +4,7 @@ import { clientsClaim } from 'workbox-core';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
+import { StaleWhileRevalidate, CacheFirst, NetworkFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -41,25 +41,55 @@ registerRoute(
   createHandlerBoundToURL('/index.html')
 );
 
-// Cache images with a Cache First strategy
+// Cache images with a Cache First strategy for longer period
 registerRoute(
   ({ request }) => request.destination === 'image',
   new CacheFirst({
-    cacheName: 'images',
+    cacheName: 'images-cache',
     plugins: [
-      // Ensure we don't keep more than 50 images in the cache
+      // Ensure we don't keep more than 60 images in the cache
       new ExpirationPlugin({
-        maxEntries: 50,
+        maxEntries: 60,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
 );
 
-// Cache API requests with a Stale While Revalidate strategy
+// Cache CSS and JS with a Stale While Revalidate strategy
+registerRoute(
+  ({ request }) => 
+    request.destination === 'style' ||
+    request.destination === 'script',
+  new StaleWhileRevalidate({
+    cacheName: 'static-resources',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 32,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      }),
+    ],
+  })
+);
+
+// Cache font files
+registerRoute(
+  ({ request }) => request.destination === 'font',
+  new CacheFirst({
+    cacheName: 'fonts-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 10,
+        maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+      }),
+    ],
+  })
+);
+
+// Cache API requests with a Network First strategy
 registerRoute(
   ({ url }) => url.pathname.includes('/api/'),
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: 'api-responses',
     plugins: [
       new ExpirationPlugin({
@@ -67,17 +97,6 @@ registerRoute(
         maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
       }),
     ],
-  })
-);
-
-// Cache other assets with Stale While Revalidate
-registerRoute(
-  ({ request }) => 
-    request.destination === 'style' ||
-    request.destination === 'script' ||
-    request.destination === 'font',
-  new StaleWhileRevalidate({
-    cacheName: 'static-resources',
   })
 );
 
@@ -159,5 +178,12 @@ self.addEventListener('fetch', (event) => {
         return caches.match('/offline.html') || Promise.resolve(offlineResponse);
       })
     );
+  }
+});
+
+// Listen for the 'message' event to handle cache updates
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });

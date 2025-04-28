@@ -1,44 +1,46 @@
 
-import { Task, Project } from '@/context/TaskTypes';
+import { Task, Project, TimeBlock, TimeTracking } from '@/context/TaskTypes';
 import { v4 as uuidv4 } from 'uuid';
-
-// Define sync operations
-type SyncOperation = 'create' | 'update' | 'delete';
-
-// Define the structure of pending changes to be synced
-interface PendingChange {
-  id: string;
-  entityType: 'task' | 'project';
-  entityId: string;
-  operation: SyncOperation;
-  data: Task | Project;
-  timestamp: number;
-}
-
-const STORAGE_KEY = 'offline-pending-changes';
+import { indexedDBService, PendingOperation, EntityType, OperationType } from './indexedDBService';
+import * as taskService from '@/services/taskService';
+import * as projectService from '@/services/projectService';
+import * as timeTrackingService from '@/services/timeTrackingService';
+import * as timeBlockService from '@/services/timeBlockService';
 
 /**
- * Store pending changes when working offline
+ * Enhanced offline sync service using IndexedDB for storage
  */
 export class OfflineSyncService {
-  private pendingChanges: PendingChange[] = [];
   private isOnline: boolean = navigator.onLine;
-
+  private syncInProgress: boolean = false;
+  private syncListeners: Array<(count: number) => void> = [];
+  
   constructor() {
-    this.loadFromStorage();
-    window.addEventListener('online', this.handleOnline);
-    window.addEventListener('offline', this.handleOffline);
+    this.setupEventListeners();
   }
 
-  private handleOnline = () => {
+  private setupEventListeners(): void {
+    window.addEventListener('online', this.handleOnline);
+    window.addEventListener('offline', this.handleOffline);
+    
+    // Set up periodic sync attempts when online
+    setInterval(() => {
+      if (this.isOnline) {
+        this.attemptSync();
+      }
+    }, 60000); // Try every minute
+  }
+
+  private handleOnline = async () => {
     console.log('App is online. Attempting to sync pending changes...');
     this.isOnline = true;
-    this.syncPendingChanges();
+    await this.attemptSync();
   };
 
   private handleOffline = () => {
     console.log('App is offline. Changes will be saved locally.');
     this.isOnline = false;
+    this.notifySyncListeners();
   };
 
   public isAppOnline(): boolean {
@@ -46,28 +48,113 @@ export class OfflineSyncService {
   }
 
   /**
-   * Record a change that needs to be synced when back online
+   * Add a listener for sync status changes
    */
-  public addPendingChange(
-    entityType: 'task' | 'project',
-    operation: SyncOperation,
-    data: Task | Project
-  ): void {
-    const change: PendingChange = {
+  public addSyncListener(listener: (count: number) => void): () => void {
+    this.syncListeners.push(listener);
+    return () => {
+      this.syncListeners = this.syncListeners.filter(l => l !== listener);
+    };
+  }
+
+  private notifySyncListeners(): void {
+    this.getPendingOperationsCount().then(count => {
+      this.syncListeners.forEach(listener => listener(count));
+    });
+  }
+
+  /**
+   * Record a task change that needs to be synced when back online
+   */
+  public async addTaskChange(
+    operation: OperationType,
+    data: Task
+  ): Promise<void> {
+    await this.addPendingChange('task', operation, data);
+    
+    // Update local data in IndexedDB
+    if (operation === 'create' || operation === 'update') {
+      await indexedDBService.saveTask(data);
+    } else if (operation === 'delete') {
+      await indexedDBService.deleteTask(data.id);
+    }
+  }
+
+  /**
+   * Record a project change that needs to be synced when back online
+   */
+  public async addProjectChange(
+    operation: OperationType,
+    data: Project
+  ): Promise<void> {
+    await this.addPendingChange('project', operation, data);
+    
+    // Update local data in IndexedDB
+    if (operation === 'create' || operation === 'update') {
+      await indexedDBService.saveProject(data);
+    } else if (operation === 'delete') {
+      await indexedDBService.deleteProject(data.id);
+    }
+  }
+
+  /**
+   * Record a time tracking change that needs to be synced when back online
+   */
+  public async addTimeTrackingChange(
+    operation: OperationType,
+    data: TimeTracking
+  ): Promise<void> {
+    await this.addPendingChange('timeTracking', operation, data);
+    
+    // Update local data in IndexedDB
+    if (operation === 'create' || operation === 'update') {
+      await indexedDBService.saveTimeTracking(data);
+    } else if (operation === 'delete') {
+      await indexedDBService.deleteTimeTracking(data.id);
+    }
+  }
+
+  /**
+   * Record a time block change that needs to be synced when back online
+   */
+  public async addTimeBlockChange(
+    operation: OperationType,
+    data: TimeBlock
+  ): Promise<void> {
+    await this.addPendingChange('timeBlock', operation, data);
+    
+    // Update local data in IndexedDB
+    if (operation === 'create' || operation === 'update') {
+      await indexedDBService.saveTimeBlock(data);
+    } else if (operation === 'delete') {
+      await indexedDBService.deleteTimeBlock(data.id);
+    }
+  }
+  
+  /**
+   * Generic method to record any entity change
+   */
+  private async addPendingChange(
+    entityType: EntityType,
+    operation: OperationType,
+    data: any
+  ): Promise<void> {
+    const change: PendingOperation = {
       id: uuidv4(),
       entityType,
       entityId: data.id,
       operation,
       data,
       timestamp: Date.now(),
+      attempts: 0
     };
 
-    this.pendingChanges.push(change);
-    this.saveToStorage();
+    await indexedDBService.addPendingOperation(change);
+    this.notifySyncListeners();
 
     // If we're online, try to sync immediately
     if (this.isOnline) {
-      this.syncPendingChanges();
+      this.attemptSync();
     }
 
     // Register for background sync if available
@@ -77,59 +164,162 @@ export class OfflineSyncService {
   /**
    * Try to sync all pending changes with the server
    */
-  public async syncPendingChanges(): Promise<void> {
-    if (!this.isOnline || this.pendingChanges.length === 0) {
+  public async attemptSync(): Promise<void> {
+    if (!this.isOnline || this.syncInProgress) {
       return;
     }
 
-    console.log(`Attempting to sync ${this.pendingChanges.length} pending changes`);
+    this.syncInProgress = true;
     
-    // Process changes in the order they were created
-    const sortedChanges = [...this.pendingChanges].sort((a, b) => a.timestamp - b.timestamp);
-    
-    const successfulSyncs: string[] = [];
+    try {
+      const pendingChanges = await indexedDBService.getPendingOperations();
+      if (pendingChanges.length === 0) {
+        this.syncInProgress = false;
+        return;
+      }
 
-    for (const change of sortedChanges) {
-      try {
-        let success = false;
-
-        // Here you would implement the actual syncing logic with your server
-        // This would depend on your API structure
-        switch (change.operation) {
-          case 'create':
-            // API call to create entity
-            console.log(`Syncing: Create ${change.entityType} operation`);
-            success = true; // Replace with actual API result
-            break;
-            
-          case 'update':
-            // API call to update entity
-            console.log(`Syncing: Update ${change.entityType} operation`);
-            success = true; // Replace with actual API result
-            break;
-            
-          case 'delete':
-            // API call to delete entity
-            console.log(`Syncing: Delete ${change.entityType} operation`);
-            success = true; // Replace with actual API result
-            break;
-        }
-
-        if (success) {
-          console.log(`Successfully synced change: ${change.id}`);
-          successfulSyncs.push(change.id);
-        }
-      } catch (error) {
-        console.error(`Error syncing change ${change.id}:`, error);
+      console.log(`Attempting to sync ${pendingChanges.length} pending changes`);
+      
+      // Process changes in the order they were created
+      const sortedChanges = [...pendingChanges].sort((a, b) => a.timestamp - b.timestamp);
+      
+      const maxBatchSize = 5; // Process in small batches to avoid long operations
+      const batch = sortedChanges.slice(0, maxBatchSize);
+      
+      const syncPromises = batch.map(change => this.processSingleChange(change));
+      await Promise.allSettled(syncPromises);
+      
+    } catch (error) {
+      console.error('Error during sync attempt:', error);
+    } finally {
+      this.syncInProgress = false;
+      this.notifySyncListeners();
+      
+      // If there are still pending changes, schedule another attempt
+      const remainingCount = await this.getPendingOperationsCount();
+      if (remainingCount > 0 && this.isOnline) {
+        setTimeout(() => this.attemptSync(), 5000);
       }
     }
-
-    // Remove successfully synced changes
-    if (successfulSyncs.length > 0) {
-      this.pendingChanges = this.pendingChanges.filter(
-        (change) => !successfulSyncs.includes(change.id)
-      );
-      this.saveToStorage();
+  }
+  
+  /**
+   * Process a single change
+   */
+  private async processSingleChange(change: PendingOperation): Promise<void> {
+    try {
+      // Update attempt count
+      change.attempts += 1;
+      change.lastAttempt = Date.now();
+      await indexedDBService.updatePendingOperation(change);
+      
+      let success = false;
+      
+      switch (change.entityType) {
+        case 'task':
+          success = await this.syncTaskChange(change);
+          break;
+        case 'project':
+          success = await this.syncProjectChange(change);
+          break;
+        case 'timeTracking':
+          success = await this.syncTimeTrackingChange(change);
+          break;
+        case 'timeBlock':
+          success = await this.syncTimeBlockChange(change);
+          break;
+      }
+      
+      if (success) {
+        await indexedDBService.deletePendingOperation(change.id);
+        console.log(`Successfully synced change: ${change.id}`);
+      } else if (change.attempts >= 5) {
+        // After 5 failed attempts, mark as requiring manual resolution
+        console.warn(`Sync failed after ${change.attempts} attempts for change: ${change.id}`);
+        // Here you could implement a conflict resolution UI
+      }
+    } catch (error) {
+      console.error(`Error syncing change ${change.id}:`, error);
+    }
+  }
+  
+  private async syncTaskChange(change: PendingOperation): Promise<boolean> {
+    try {
+      switch (change.operation) {
+        case 'create':
+          await taskService.createTask(change.data);
+          break;
+        case 'update':
+          await taskService.updateTask(change.data);
+          break;
+        case 'delete':
+          await taskService.deleteTask(change.entityId);
+          break;
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error syncing task change:`, error);
+      return false;
+    }
+  }
+  
+  private async syncProjectChange(change: PendingOperation): Promise<boolean> {
+    try {
+      switch (change.operation) {
+        case 'create':
+          await projectService.createProject(change.data);
+          break;
+        case 'update':
+          await projectService.updateProject(change.data);
+          break;
+        case 'delete':
+          await projectService.deleteProject(change.entityId);
+          break;
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error syncing project change:`, error);
+      return false;
+    }
+  }
+  
+  private async syncTimeTrackingChange(change: PendingOperation): Promise<boolean> {
+    try {
+      switch (change.operation) {
+        case 'create':
+          await timeTrackingService.addManualTimeTracking(change.data);
+          break;
+        case 'update':
+          await timeTrackingService.updateTimeTracking(change.data);
+          break;
+        case 'delete':
+          await timeTrackingService.deleteTimeTracking(change.entityId);
+          break;
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error syncing time tracking change:`, error);
+      return false;
+    }
+  }
+  
+  private async syncTimeBlockChange(change: PendingOperation): Promise<boolean> {
+    try {
+      switch (change.operation) {
+        case 'create':
+          await timeBlockService.createTimeBlock(change.data);
+          break;
+        case 'update':
+          await timeBlockService.updateTimeBlock(change.data);
+          break;
+        case 'delete':
+          await timeBlockService.deleteTimeBlock(change.entityId);
+          break;
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error syncing time block change:`, error);
+      return false;
     }
   }
 
@@ -152,43 +342,27 @@ export class OfflineSyncService {
   }
 
   /**
-   * Save pending changes to localStorage
+   * Get the current count of pending changes
    */
-  private saveToStorage(): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.pendingChanges));
-    } catch (error) {
-      console.error('Error saving pending changes to localStorage:', error);
-    }
+  public async getPendingOperationsCount(): Promise<number> {
+    const pendingChanges = await indexedDBService.getPendingOperations();
+    return pendingChanges.length;
   }
-
+  
   /**
-   * Load pending changes from localStorage
+   * Force sync all pending changes with the server
    */
-  private loadFromStorage(): void {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        this.pendingChanges = JSON.parse(stored);
-      }
-    } catch (error) {
-      console.error('Error loading pending changes from localStorage:', error);
-    }
+  public syncPendingChanges(): Promise<void> {
+    return this.attemptSync();
   }
-
-  /**
-   * Get the current pending changes
-   */
-  public getPendingChanges(): PendingChange[] {
-    return [...this.pendingChanges];
-  }
-
+  
   /**
    * Clear all pending changes
    */
-  public clearPendingChanges(): void {
-    this.pendingChanges = [];
-    this.saveToStorage();
+  public async clearPendingChanges(): Promise<void> {
+    const operations = await indexedDBService.getPendingOperations();
+    await Promise.all(operations.map(op => indexedDBService.deletePendingOperation(op.id)));
+    this.notifySyncListeners();
   }
 
   /**
@@ -203,11 +377,30 @@ export class OfflineSyncService {
 // Create and export a singleton instance
 export const offlineSyncService = new OfflineSyncService();
 
-// Hook to expose online status
+// Hook to expose online status and offline operations
 export const useOfflineSync = () => {
+  const [pendingCount, setPendingCount] = React.useState<number>(0);
+  
+  React.useEffect(() => {
+    const checkPendingCount = async () => {
+      const count = await offlineSyncService.getPendingOperationsCount();
+      setPendingCount(count);
+    };
+    
+    // Check count initially
+    checkPendingCount();
+    
+    // Subscribe to updates
+    const unsubscribe = offlineSyncService.addSyncListener(count => {
+      setPendingCount(count);
+    });
+    
+    return unsubscribe;
+  }, []);
+  
   return {
     isOnline: offlineSyncService.isAppOnline(),
-    pendingChanges: offlineSyncService.getPendingChanges(),
+    pendingChanges: pendingCount,
     syncNow: () => offlineSyncService.syncPendingChanges(),
   };
 };

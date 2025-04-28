@@ -2,9 +2,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { requestNotificationPermission, sendNotification, NotificationOptions } from '@/services/notificationService';
 import { offlineSyncService } from '@/services/offlineSyncService';
+import { useOnlineStatus, OnlineStatus } from '@/hooks/use-online-status';
 
 interface PWAContextType {
   isOnline: boolean;
+  networkStatus: OnlineStatus;
   isPWA: boolean;
   isInstallable: boolean;
   promptInstall: () => Promise<void>;
@@ -13,21 +15,25 @@ interface PWAContextType {
   sendNotification: (options: NotificationOptions) => Promise<boolean>;
   pendingChangesCount: number;
   syncPendingChanges: () => Promise<void>;
+  newVersionAvailable: boolean;
+  updateServiceWorker: () => Promise<void>;
 }
 
 const PWAContext = createContext<PWAContextType | undefined>(undefined);
 
 export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const networkStatus = useOnlineStatus();
+  const isOnline = networkStatus.isOnline;
+  
   const [isPWA, setIsPWA] = useState<boolean>(false);
   const [isInstallable, setIsInstallable] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [notificationPermission, setNotificationPermission] = useState<string>(
     'Notification' in window ? Notification.permission : 'denied'
   );
-  const [pendingChangesCount, setPendingChangesCount] = useState<number>(
-    offlineSyncService.getPendingChanges().length
-  );
+  const [pendingChangesCount, setPendingChangesCount] = useState<number>(0);
+  const [newVersionAvailable, setNewVersionAvailable] = useState<boolean>(false);
+  const [waitingServiceWorker, setWaitingServiceWorker] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
     // Check if running as installed PWA
@@ -35,12 +41,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (window.navigator as any).standalone === true) {
       setIsPWA(true);
     }
-
-    // Listen for online/offline events
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -62,21 +62,51 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.addEventListener('appinstalled', handleAppInstalled);
 
     // Track pending offline changes
-    const checkPendingChanges = () => {
-      setPendingChangesCount(offlineSyncService.getPendingChanges().length);
+    const checkPendingChanges = async () => {
+      const count = await offlineSyncService.getPendingOperationsCount();
+      setPendingChangesCount(count);
     };
     
-    // Check initially and every 30 seconds
+    // Set up listener for pending changes
+    const unsubscribe = offlineSyncService.addSyncListener(count => {
+      setPendingChangesCount(count);
+    });
+    
+    // Check initially
     checkPendingChanges();
-    const interval = setInterval(checkPendingChanges, 30000);
+    
+    // Listen for service worker updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                setNewVersionAvailable(true);
+                setWaitingServiceWorker(registration.waiting);
+              }
+            });
+          }
+        });
+      });
+      
+      // Detect controller change
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
 
     // Clean up
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      clearInterval(interval);
+      unsubscribe();
     };
   }, []);
 
@@ -115,12 +145,25 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const syncHandler = async () => {
-    await offlineSyncService.syncPendingChanges();
-    setPendingChangesCount(offlineSyncService.getPendingChanges().length);
+    if (isOnline) {
+      await offlineSyncService.syncPendingChanges();
+    } else {
+      console.log("Can't sync while offline");
+      return Promise.reject(new Error("Cannot sync while offline"));
+    }
+  };
+  
+  const updateServiceWorker = async () => {
+    if (waitingServiceWorker) {
+      // Send a message to the waiting service worker to skip waiting
+      waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+      setNewVersionAvailable(false);
+    }
   };
 
   const value: PWAContextType = {
     isOnline,
+    networkStatus,
     isPWA,
     isInstallable,
     promptInstall,
@@ -129,6 +172,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sendNotification,
     pendingChangesCount,
     syncPendingChanges: syncHandler,
+    newVersionAvailable,
+    updateServiceWorker,
   };
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;
