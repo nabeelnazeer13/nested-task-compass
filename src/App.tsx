@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { PWAProvider } from "./context/PWAContext";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Index from "./pages/Index";
@@ -18,25 +19,27 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <AuthProvider>
-          <ErrorBoundary>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/"
-                element={
-                  <RequireAuth>
-                    <Index />
-                  </RequireAuth>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ErrorBoundary>
-        </AuthProvider>
+        <PWAProvider>
+          <AuthProvider>
+            <ErrorBoundary>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/"
+                  element={
+                    <RequireAuth>
+                      <Index />
+                    </RequireAuth>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
+          </AuthProvider>
+        </PWAProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
