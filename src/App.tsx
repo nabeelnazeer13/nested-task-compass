@@ -13,15 +13,16 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
+// Create query client outside the component
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <PWAProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
           <AuthProvider>
-            <ErrorBoundary>
+            <PWAProvider>
               <Toaster />
               <Sonner />
               <Routes>
@@ -37,12 +38,12 @@ const App = () => (
                 />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </ErrorBoundary>
+            </PWAProvider>
           </AuthProvider>
-        </PWAProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
