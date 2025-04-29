@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import { TaskProvider } from "./context/TaskContext";
 
 // Create query client outside the component
 const queryClient = new QueryClient();
@@ -22,23 +23,25 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <PWAProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                  path="/"
-                  element={
-                    <RequireAuth>
-                      <Index />
-                    </RequireAuth>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </PWAProvider>
+            <TaskProvider>
+              <PWAProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route
+                    path="/"
+                    element={
+                      <RequireAuth>
+                        <Index />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </PWAProvider>
+            </TaskProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

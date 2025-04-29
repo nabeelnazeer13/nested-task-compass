@@ -55,6 +55,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const offlineSyncFeatures = useOfflineSync();
   
   // Get tasks from context to use in notifications
+  // This should be available since we've moved the TaskProvider to wrap PWAProvider
   const { tasks } = useTaskContext();
   
   useEffect(() => {

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { TaskProvider } from '@/context/TaskContext';
 import { FilterProvider } from '@/context/FilterContext';
 import { useAuth } from '@/context/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -25,9 +24,7 @@ const Index = () => {
     return (
       <ErrorBoundary>
         <FilterProvider>
-          <TaskProvider>
-            <AppLayout />
-          </TaskProvider>
+          <AppLayout />
         </FilterProvider>
       </ErrorBoundary>
     );
