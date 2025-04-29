@@ -16,18 +16,20 @@ export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children
   const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const [migrationCompleted, setMigrationCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   
   // Safely access auth context
-  let user = null;
-  let authLoading = true;
-  
-  try {
-    const authContext = useAuth();
-    user = authContext.user;
-    authLoading = authContext.loading;
-  } catch (error) {
-    console.error("Error accessing auth context:", error);
-  }
+  useEffect(() => {
+    try {
+      const { user, loading } = useAuth();
+      setUser(user);
+      setAuthLoading(loading);
+    } catch (error) {
+      console.error("Error accessing auth context:", error);
+      setAuthLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (user && !authLoading) {
