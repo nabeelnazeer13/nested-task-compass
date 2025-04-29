@@ -4,7 +4,7 @@ import { Task, Priority } from '@/context/TaskTypes';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import TaskItemDetails from './TaskItemDetails';
+import EditableTaskItemDetail from './EditableTaskItemDetail';
 import TaskItemActions from './TaskItemActions';
 import { useTaskContext } from '@/context/TaskContext';
 import { toast } from "sonner";
@@ -120,7 +120,7 @@ const TaskItemMain: React.FC<TaskItemMainProps> = ({ task, level, onAddSubtask }
         </Button>
       )}
       
-      <TaskItemDetails task={task} />
+      <EditableTaskItemDetail task={task} />
       <TaskItemActions task={task} onAddSubtask={onAddSubtask} />
       
       {isMobile && translateX > 0 && (

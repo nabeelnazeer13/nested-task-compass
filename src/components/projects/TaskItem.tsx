@@ -20,10 +20,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const isMobile = useIsMobile();
 
   const handleTaskClick = (e: React.MouseEvent) => {
-    // Don't open details if clicking the expand button or task controls
+    // Don't open details if clicking the expand button, task controls or if editing is in progress
     if (
       (e.target as HTMLElement).closest('button') || 
-      (e.target as HTMLElement).closest('.task-controls')
+      (e.target as HTMLElement).closest('.task-controls') ||
+      (e.target as HTMLElement).closest('.cursor-pointer.hover\\:bg-accent') // Don't open details when clicking editable badges
     ) {
       return;
     }
