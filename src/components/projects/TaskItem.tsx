@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task } from '@/context/TaskTypes';
 import TaskItemMain from './TaskItemMain';
 import AddTaskDialog from './AddTaskDialog';
@@ -7,6 +7,7 @@ import TimeTrackingDialog from '@/components/time-tracking/TimeTrackingDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import TaskDetailsContent from '@/components/tasks/TaskDetailsContent';
+import { usePWA } from '@/context/PWAContext';
 
 interface TaskItemProps {
   task: Task;
@@ -17,14 +18,31 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [showTimeTrackingDialog, setShowTimeTrackingDialog] = useState(false);
   const [showTaskDetails, setShowTaskDetails] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const isMobile = useIsMobile();
+  const { scheduleTaskNotification } = usePWA();
+  
+  // Schedule notification when task is first mounted and has time
+  useEffect(() => {
+    if (task.dueDate && task.timeSlot) {
+      scheduleTaskNotification(task);
+    }
+  }, []);
+  
+  // Update notifications when task time changes
+  useEffect(() => {
+    if (task.dueDate && task.timeSlot) {
+      scheduleTaskNotification(task);
+    }
+  }, [task.dueDate, task.timeSlot]);
 
   const handleTaskClick = (e: React.MouseEvent) => {
     // Don't open details if clicking the expand button, task controls or if editing is in progress
     if (
       (e.target as HTMLElement).closest('button') || 
       (e.target as HTMLElement).closest('.task-controls') ||
-      (e.target as HTMLElement).closest('.cursor-pointer.hover\\:bg-accent') // Don't open details when clicking editable badges
+      (e.target as HTMLElement).closest('.cursor-pointer.hover\\:bg-accent') || // Don't open details when clicking editable badges
+      isEditing
     ) {
       return;
     }
@@ -38,6 +56,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
           task={task} 
           level={level}
           onAddSubtask={() => setIsAddingSubtask(true)}
+          onEditStateChange={setIsEditing}
         />
       </div>
       

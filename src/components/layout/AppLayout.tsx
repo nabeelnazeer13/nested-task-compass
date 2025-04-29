@@ -17,9 +17,12 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineStatusBar } from '@/components/pwa/OfflineStatusBar';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { NotificationPermissionPrompt } from '@/components/pwa/NotificationPermissionPrompt';
+import { NotificationSettings } from '@/components/pwa/NotificationSettings';
+import { usePWA } from '@/context/PWAContext';
 
 const AppLayout = () => {
   const { user } = useAuth();
+  const { isPWA } = usePWA();
   
   // Use the unified task context which automatically picks the correct provider
   const context = useTaskContext();
@@ -59,10 +62,10 @@ const AppLayout = () => {
         <OfflineStatusBar />
         
         <div className="container mx-auto md:py-6 space-y-4 md:space-y-8 md:px-6 px-0 py-[20px] flex-1">
-          {/* PWA Prompts */}
+          {/* PWA Prompts and Settings */}
           <div className="space-y-4">
-            <InstallPrompt />
-            <NotificationPermissionPrompt />
+            {!isPWA && <InstallPrompt />}
+            <NotificationSettings />
           </div>
           
           <Tabs defaultValue="projects" value={selectedView} onValueChange={handleTabChange}>

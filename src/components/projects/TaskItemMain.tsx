@@ -15,9 +15,10 @@ interface TaskItemMainProps {
   task: Task;
   level: number;
   onAddSubtask: () => void;
+  onEditStateChange?: (isEditing: boolean) => void;
 }
 
-const TaskItemMain: React.FC<TaskItemMainProps> = ({ task, level, onAddSubtask }) => {
+const TaskItemMain: React.FC<TaskItemMainProps> = ({ task, level, onAddSubtask, onEditStateChange }) => {
   const { toggleTaskExpanded, updateTask } = useTaskContext();
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -82,6 +83,13 @@ const TaskItemMain: React.FC<TaskItemMainProps> = ({ task, level, onAddSubtask }
     setTranslateX(0);
   };
 
+  // Notify parent when editing state changes
+  const handleEditStateChange = (isEditing: boolean) => {
+    if (onEditStateChange) {
+      onEditStateChange(isEditing);
+    }
+  };
+
   return (
     <div 
       className={`flex items-center p-2 task-item ${task.completed ? 'opacity-60' : ''} ${isDragging ? 'opacity-50' : ''} ${isMobile ? 'pl-1' : ''}`}
@@ -120,7 +128,11 @@ const TaskItemMain: React.FC<TaskItemMainProps> = ({ task, level, onAddSubtask }
         </Button>
       )}
       
-      <EditableTaskItemDetail task={task} />
+      <EditableTaskItemDetail 
+        task={task} 
+        onEditStateChange={handleEditStateChange} 
+      />
+      
       <TaskItemActions task={task} onAddSubtask={onAddSubtask} />
       
       {isMobile && translateX > 0 && (

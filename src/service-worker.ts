@@ -1,3 +1,4 @@
+
 /// <reference lib="webworker" />
 
 import { clientsClaim } from 'workbox-core';
@@ -100,20 +101,54 @@ registerRoute(
   })
 );
 
-// Handle notification click events
+// Enhanced notification click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
-  // Focus on or open a window when notification is clicked
+  // Extract notification data
+  const notificationData = event.notification.data || {};
+  
+  // Focus on or open a window with appropriate navigation
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      // Try to find an already open window
       for (const client of clientList) {
-        if (client.url === '/' && 'focus' in client) {
+        if ('focus' in client) {
+          // Navigate to the appropriate route based on notification type
+          if (notificationData.type === 'reminder' && notificationData.taskId) {
+            // For task reminders, navigate to that specific task
+            client.postMessage({
+              type: 'NOTIFICATION_CLICKED',
+              notificationType: 'reminder',
+              taskId: notificationData.taskId
+            });
+            return client.focus();
+          } else if (notificationData.type === 'daily') {
+            // For daily summary, navigate to today's view
+            client.postMessage({
+              type: 'NOTIFICATION_CLICKED',
+              notificationType: 'daily'
+            });
+            return client.focus();
+          }
+          
+          // Default: just focus the client
           return client.focus();
         }
       }
+      
+      // If no open clients, open a new window
       if (self.clients.openWindow) {
-        return self.clients.openWindow('/');
+        let url = '/';
+        
+        // Add query parameters for specific views
+        if (notificationData.type === 'daily') {
+          url = '/?view=calendar';
+        } else if (notificationData.type === 'reminder' && notificationData.taskId) {
+          url = `/?taskId=${notificationData.taskId}`;
+        }
+        
+        return self.clients.openWindow(url);
       }
     })
   );
