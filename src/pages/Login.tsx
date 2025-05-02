@@ -7,14 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface LoginForm {
   email: string;
   password: string;
 }
 
-const LoginContent = () => {
+const Login = () => {
   const { signIn } = useAuth();
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<LoginForm>();
 
@@ -76,14 +75,6 @@ const LoginContent = () => {
         </CardContent>
       </Card>
     </div>
-  );
-};
-
-const Login = () => {
-  return (
-    <ErrorBoundary>
-      <LoginContent />
-    </ErrorBoundary>
   );
 };
 

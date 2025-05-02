@@ -12,6 +12,7 @@ import {
   updateTaskReminders,
   sendTodaySummaryNotification
 } from '@/services/scheduledNotificationService';
+import { useTaskContext } from '@/context/TaskContext';
 import { Task } from './TaskTypes';
 
 interface PWAContextType {
@@ -53,17 +54,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const serviceWorkerFeatures = useServiceWorkerUpdates();
   const offlineSyncFeatures = useOfflineSync();
   
-  // Get tasks safely - don't crash if context isn't available
-  let tasks: Task[] = [];
-  try {
-    // Import dynamically to prevent circular dependencies
-    const { useTaskContext } = require('@/context/TaskContext');
-    const taskContext = useTaskContext();
-    tasks = taskContext?.tasks || [];
-  } catch (error) {
-    console.error("Error accessing task context:", error);
-    tasks = [];
-  }
+  // Get tasks from context to use in notifications
+  const { tasks } = useTaskContext();
   
   useEffect(() => {
     const checkPendingChanges = async () => {
@@ -104,10 +96,10 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           window.location.href = '/?view=calendar';
         } else if (event.data.notificationType === 'reminder' && event.data.taskId) {
           // Show the task details
-          const foundTask = tasks.find(t => t.id === event.data.taskId);
-          if (foundTask) {
+          const task = tasks.find(t => t.id === event.data.taskId);
+          if (task) {
             // Logic to show task details would go here
-            console.log('Opening task:', foundTask.title);
+            console.log('Opening task:', task.title);
             // You could dispatch an event or update state to open the task
           }
         }

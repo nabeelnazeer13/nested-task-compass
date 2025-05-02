@@ -14,13 +14,14 @@ import { useTaskContext } from '@/context/TaskContext';
 
 interface EditableTaskItemDetailProps {
   task: Task;
-  onEditStateChange?: (isEditing: boolean) => void;
 }
 
-const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task, onEditStateChange }) => {
+type EditingField = 'dueDate' | 'priority' | 'estimatedTime' | null;
+
+const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task }) => {
   const isMobile = useIsMobile();
   const { updateTask } = useTaskContext();
-  const [editingField, setEditingField] = useState<'dueDate' | 'priority' | 'estimatedTime' | null>(null);
+  const [editingField, setEditingField] = useState<EditingField>(null);
 
   // Handle saving due date and time
   const handleSaveDueDate = (date: Date | undefined, timeSlot: string | undefined) => {
@@ -30,7 +31,6 @@ const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task, o
       timeSlot
     });
     setEditingField(null);
-    if (onEditStateChange) onEditStateChange(false);
   };
 
   // Handle saving priority
@@ -40,7 +40,6 @@ const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task, o
       priority
     });
     setEditingField(null);
-    if (onEditStateChange) onEditStateChange(false);
   };
 
   // Handle saving estimated time
@@ -50,20 +49,17 @@ const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task, o
       estimatedTime
     });
     setEditingField(null);
-    if (onEditStateChange) onEditStateChange(false);
   };
 
   // Handle click on field to edit
-  const handleFieldClick = (field: 'dueDate' | 'priority' | 'estimatedTime', event: React.MouseEvent) => {
+  const handleFieldClick = (field: EditingField, event: React.MouseEvent) => {
     event.stopPropagation();
     setEditingField(field);
-    if (onEditStateChange) onEditStateChange(true);
   };
 
   // Cancel any editing
   const handleCancelEdit = () => {
     setEditingField(null);
-    if (onEditStateChange) onEditStateChange(false);
   };
   
   return (

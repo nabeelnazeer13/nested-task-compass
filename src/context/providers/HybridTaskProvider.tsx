@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ReactNode } from 'react';
 import { TaskContextProvider } from './TaskContextProvider';
@@ -13,23 +12,10 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, loading: authLoading } = useAuth();
   const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const [migrationCompleted, setMigrationCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  
-  // Safely access auth context
-  useEffect(() => {
-    try {
-      const { user, loading } = useAuth();
-      setUser(user);
-      setAuthLoading(loading);
-    } catch (error) {
-      console.error("Error accessing auth context:", error);
-      setAuthLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (user && !authLoading) {
