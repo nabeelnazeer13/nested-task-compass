@@ -4,21 +4,11 @@ import { useTaskContext as useLocalTaskContext } from './providers/TaskContextPr
 import { useSupabaseTaskContext } from './providers/SupabaseTaskProvider';
 import { useTimeTrackingContext } from './providers/TimeTrackingProvider';
 import { useViewModeContext } from './providers/ViewModeProvider';
-import { useAuth } from './AuthContext';
 import type { Task, Project, TimeBlock, TimeTracking, Priority } from './TaskTypes';
 import type { TaskContextType, TimeTrackingContextType } from './types/TaskContextTypes';
 
-// Create a function that returns the hook rather than executing it immediately
-const createUnifiedTaskContext = () => {
-  const useUnifiedTaskContext = () => {
-    const { user } = useAuth();
-    return user ? useSupabaseTaskContext() : useLocalTaskContext();
-  };
-  return useUnifiedTaskContext;
-};
-
-// Export the hook factory function result
-export const useTaskContext = createUnifiedTaskContext();
+// Always use local task context since we're removing authentication
+export const useTaskContext = useLocalTaskContext;
 
 export {
   HybridTaskProvider as TaskProvider,

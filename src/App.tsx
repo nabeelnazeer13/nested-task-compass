@@ -4,13 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
 import { PWAProvider } from "./context/PWAContext";
-import { RequireAuth } from "./components/auth/RequireAuth";
+import { TaskProvider } from "./context/TaskContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,27 +16,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <PWAProvider>
-          <AuthProvider>
-            <ErrorBoundary>
+        <ErrorBoundary>
+          <PWAProvider>
+            <TaskProvider>
               <Toaster />
               <Sonner />
               <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                  path="/"
-                  element={
-                    <RequireAuth>
-                      <Index />
-                    </RequireAuth>
-                  }
-                />
+                <Route path="/" element={<Index />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </ErrorBoundary>
-          </AuthProvider>
-        </PWAProvider>
+            </TaskProvider>
+          </PWAProvider>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
