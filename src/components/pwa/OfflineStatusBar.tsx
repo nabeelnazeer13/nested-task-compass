@@ -43,7 +43,14 @@ export const OfflineStatusBar = () => {
 
   const handleUpdate = () => {
     toast.promise(
-      updateServiceWorker(),
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await updateServiceWorker();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      }),
       {
         loading: 'Updating application...',
         success: 'Update applied! The app will reload shortly.',

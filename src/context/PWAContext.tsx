@@ -6,13 +6,12 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { useLocalTaskContext } from './TaskContext';
 import { registerSW } from '@/pwa/registerSW';
 
 interface PWAContextType {
   offlineReady: boolean;
   needRefresh: boolean;
-  updateServiceWorker: () => void;
+  updateServiceWorker: () => Promise<void>;
   isPWA: boolean;
   isInstallable: boolean;
   promptInstall: () => Promise<void>;
@@ -39,7 +38,6 @@ export const PWAProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [offlineReady, setOfflineReady] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
   const [updateSW, setUpdateSW] = useState<(() => Promise<boolean>) | null>(null);
-  const taskContext = useLocalTaskContext();
   
   // PWA installation states
   const [isPWA, setIsPWA] = useState<boolean>(false);
@@ -155,9 +153,9 @@ export const PWAProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const updateServiceWorker = () => {
+  const updateServiceWorker = async (): Promise<void> => {
     if (updateSW) {
-      updateSW();
+      await updateSW();
     }
   };
   
@@ -180,16 +178,14 @@ export const PWAProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
   
-  const syncPendingChanges = async () => {
+  const syncPendingChanges = async (): Promise<void> => {
     // Simplified version without authentication
     try {
       // Simulate sync
       await new Promise(resolve => setTimeout(resolve, 1000));
       setPendingChangesCount(0);
-      return true;
     } catch (error) {
       console.error('Error syncing changes:', error);
-      return false;
     }
   };
   

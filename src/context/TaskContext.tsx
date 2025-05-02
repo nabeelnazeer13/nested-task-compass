@@ -11,7 +11,7 @@ import type { TaskContextType, TimeTrackingContextType } from './types/TaskConte
 export const useTaskContext = useLocalTaskContext;
 
 export {
-  HybridTaskProvider as TaskProvider,
+  HybridTaskProvider,
   useTimeTrackingContext,
   useViewModeContext,
   useLocalTaskContext,
