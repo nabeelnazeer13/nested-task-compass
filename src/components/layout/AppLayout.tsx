@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProjectView from '@/components/projects/ProjectView';
 import CalendarView from '@/components/calendar/CalendarView';
 import { useTaskContext, useViewModeContext } from '@/context/TaskContext';
-import { useAuth } from '@/context/AuthContext';
 import { Plus, Calendar, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -16,13 +15,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineStatusBar } from '@/components/pwa/OfflineStatusBar';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
-import { NotificationPermissionPrompt } from '@/components/pwa/NotificationPermissionPrompt';
 import { NotificationSettings } from '@/components/pwa/NotificationSettings';
-import { usePWA } from '@/context/PWAContext';
+import { usePWAContext } from '@/context/PWAContext';
 
 const AppLayout = () => {
-  const { user } = useAuth();
-  const { isPWA } = usePWA();
+  const { isPWA } = usePWAContext();
   
   // Use the unified task context which automatically picks the correct provider
   const context = useTaskContext();

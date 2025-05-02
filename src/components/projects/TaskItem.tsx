@@ -7,7 +7,7 @@ import TimeTrackingDialog from '@/components/time-tracking/TimeTrackingDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import TaskDetailsContent from '@/components/tasks/TaskDetailsContent';
-import { usePWA } from '@/context/PWAContext';
+import { usePWAContext } from '@/context/PWAContext';
 
 interface TaskItemProps {
   task: Task;
@@ -20,7 +20,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
   const [showTaskDetails, setShowTaskDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const isMobile = useIsMobile();
-  const { scheduleTaskNotification } = usePWA();
+  const { scheduleTaskNotification } = usePWAContext();
   
   // Schedule notification when task is first mounted and has time
   useEffect(() => {

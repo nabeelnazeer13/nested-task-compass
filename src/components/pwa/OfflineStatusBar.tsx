@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { usePWA } from '@/context/PWAContext';
-import { WifiOff, CloudSun, Cloud, RefreshCcw, AlertTriangle, Wifi } from 'lucide-react';
+import { usePWAContext } from '@/context/PWAContext';
+import { WifiOff, CloudSun, Cloud, RefreshCcw, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
 export const OfflineStatusBar = () => {
@@ -14,7 +14,7 @@ export const OfflineStatusBar = () => {
     syncPendingChanges,
     newVersionAvailable,
     updateServiceWorker
-  } = usePWA();
+  } = usePWAContext();
   
   const [syncing, setSyncing] = React.useState(false);
 

@@ -14,14 +14,26 @@ import { useTaskContext } from '@/context/TaskContext';
 
 interface EditableTaskItemDetailProps {
   task: Task;
+  onEditStateChange?: (isEditing: boolean) => void;
 }
 
 type EditingField = 'dueDate' | 'priority' | 'estimatedTime' | null;
 
-const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task }) => {
+const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ 
+  task,
+  onEditStateChange
+}) => {
   const isMobile = useIsMobile();
   const { updateTask } = useTaskContext();
   const [editingField, setEditingField] = useState<EditingField>(null);
+
+  // Update the setEditingField to also call onEditStateChange if provided
+  const setEditingFieldWithCallback = (field: EditingField) => {
+    setEditingField(field);
+    if (onEditStateChange) {
+      onEditStateChange(field !== null);
+    }
+  };
 
   // Handle saving due date and time
   const handleSaveDueDate = (date: Date | undefined, timeSlot: string | undefined) => {
@@ -30,7 +42,7 @@ const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task })
       dueDate: date,
       timeSlot
     });
-    setEditingField(null);
+    setEditingFieldWithCallback(null);
   };
 
   // Handle saving priority
@@ -39,7 +51,7 @@ const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task })
       ...task,
       priority
     });
-    setEditingField(null);
+    setEditingFieldWithCallback(null);
   };
 
   // Handle saving estimated time
@@ -48,18 +60,18 @@ const EditableTaskItemDetail: React.FC<EditableTaskItemDetailProps> = ({ task })
       ...task,
       estimatedTime
     });
-    setEditingField(null);
+    setEditingFieldWithCallback(null);
   };
 
   // Handle click on field to edit
   const handleFieldClick = (field: EditingField, event: React.MouseEvent) => {
     event.stopPropagation();
-    setEditingField(field);
+    setEditingFieldWithCallback(field);
   };
 
   // Cancel any editing
   const handleCancelEdit = () => {
-    setEditingField(null);
+    setEditingFieldWithCallback(null);
   };
   
   return (

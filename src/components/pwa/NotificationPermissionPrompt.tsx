@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { usePWA } from '@/context/PWAContext';
+import { usePWAContext } from '@/context/PWAContext';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 
 export const NotificationPermissionPrompt = () => {
-  const { notificationPermission, requestNotificationPermission } = usePWA();
+  const { notificationPermission, requestNotificationPermission } = usePWAContext();
   const [dismissed, setDismissed] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 

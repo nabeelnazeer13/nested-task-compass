@@ -1,11 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Task, TimeBlock, TimeTracking, ReactNode } from '../TaskTypes';
 import { useProjectActions } from '../hooks/useProjectActions';
 import { useTaskActions } from '../hooks/useTaskActions';
 import { useTimeTrackingActions } from '../hooks/useTimeTrackingActions';
 import { useTimeBlockActions } from '../hooks/useTimeBlockActions';
-import { useAuth } from '../AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import * as projectService from '@/services/projectService';
 import * as taskService from '@/services/taskService';
@@ -50,7 +48,9 @@ interface SupabaseTaskContextProviderType {
 const SupabaseTaskContext = createContext<SupabaseTaskContextProviderType | undefined>(undefined);
 
 export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  // Since we've removed authentication, we'll assume a default user state for simplicity
+  const userId = 'default-user';
+  
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
@@ -72,21 +72,10 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
   }>>([]);
 
   useEffect(() => {
-    if (user) {
-      loadInitialData();
-    } else {
-      setProjects([]);
-      setTasks([]);
-      setTimeBlocks([]);
-      setTimeTrackings([]);
-      setActiveTimeTracking(null);
-      setLoading(false);
-    }
-  }, [user]);
+    loadInitialData();
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
-
     const channels = [
       supabase.channel('public:projects')
         .on('postgres_changes', 
@@ -130,7 +119,7 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
         supabase.removeChannel(channel);
       });
     };
-  }, [user]);
+  }, []);
 
   // Process pending operations when coming back online
   useEffect(() => {
@@ -262,6 +251,7 @@ export const SupabaseTaskProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
+  // Rest of the methods remain largely unchanged, just removing auth dependencies
   const addProjectDb = async (project: Omit<Project, 'id' | 'isExpanded'>) => {
     try {
       await projectService.createProject(project);

@@ -16,7 +16,6 @@ import {
   isMigrationNeeded, 
   markMigrationCompleted 
 } from '@/services/migrationService';
-import { useAuth } from '@/context/AuthContext';
 
 interface MigrationDialogProps {
   open: boolean;
@@ -29,7 +28,9 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
   onOpenChange,
   onMigrationComplete
 }) => {
-  const { user } = useAuth();
+  // Since we're removing auth, assume a default user for simplicity
+  const userId = 'default-user';
+  
   const [isMigrating, setIsMigrating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [migrationStatus, setMigrationStatus] = useState('');
@@ -45,15 +46,6 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
   }, [open, onOpenChange]);
   
   const handleMigrateData = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to migrate your data.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsMigrating(true);
     setProgress(0);
     setMigrationStatus('Starting migration...');

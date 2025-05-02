@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { usePWA } from '@/context/PWAContext';
+import { usePWAContext } from '@/context/PWAContext';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const InstallPrompt = () => {
-  const { isInstallable, promptInstall, isPWA } = usePWA();
+  const { isInstallable, promptInstall, isPWA } = usePWAContext();
   const [dismissed, setDismissed] = useState(false);
   const [showAgain, setShowAgain] = useState(false);
   const isMobile = useIsMobile();

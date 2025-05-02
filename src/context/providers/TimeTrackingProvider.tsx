@@ -1,9 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode, TimeTracking, TimeBlock } from '../TaskTypes';
 import { useTimeTrackingActions } from '../hooks/useTimeTrackingActions';
 import { useTimeBlockActions } from '../hooks/useTimeBlockActions';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../AuthContext';
 import * as timeTrackingService from '@/services/timeTrackingService';
 import * as timeBlockService from '@/services/timeBlockService';
 import { withTaskContext } from '../hocs/withTaskContext';
@@ -23,25 +23,18 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   taskContext 
 }) => {
   const { tasks, updateTask } = taskContext;
-  const { user } = useAuth();
+  // Since we've removed authentication, we'll assume a default user state
+  const userId = 'default-user';
+  
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [timeTrackings, setTimeTrackings] = useState<TimeTracking[]>([]);
   const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
   
   useEffect(() => {
-    if (!user) {
-      setTimeBlocks([]);
-      setTimeTrackings([]);
-      setActiveTimeTracking(null);
-      return;
-    }
-
     loadInitialData();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
-
     const channels = [
       supabase.channel('public:time_trackings')
         .on('postgres_changes', 
@@ -61,7 +54,7 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
         supabase.removeChannel(channel);
       });
     };
-  }, [user]);
+  }, []);
 
   const loadInitialData = async () => {
     try {

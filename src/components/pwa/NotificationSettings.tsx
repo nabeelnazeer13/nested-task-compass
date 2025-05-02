@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { usePWA } from '@/context/PWAContext';
+import { usePWAContext } from '@/context/PWAContext';
 import { Bell, BellOff, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -23,7 +23,7 @@ export const NotificationSettings = () => {
     notificationsEnabled,
     setNotificationsEnabled,
     scheduleDailyNotification
-  } = usePWA();
+  } = usePWAContext();
   
   const [dailyTime, setDailyTime] = useState('08:00'); 
   
