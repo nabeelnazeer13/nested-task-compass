@@ -13,7 +13,6 @@ export {
   HybridTaskProvider,
   useTimeTrackingContext,
   useViewModeContext,
-  useLocalTaskContext,
   type Task,
   type Project,
   type TimeBlock,
