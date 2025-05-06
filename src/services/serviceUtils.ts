@@ -66,14 +66,10 @@ export const processSupabaseData = <T extends Record<string, any>>(data: T): T =
 
 /**
  * Get the current authenticated user's ID
+ * Since we're removing authentication, we'll return a default user ID
  */
 export const getCurrentUserId = async (): Promise<string> => {
-  // Fix: await the Promise before trying to access data
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-  return user.id;
+  return 'default-user';
 };
 
 // Create caches for different data types
@@ -83,8 +79,5 @@ export const timeBlocksCache = new Cache<any>({ ttl: 300000, capacity: 500 });
 export const timeTrackingsCache = new Cache<any>({ ttl: 300000, capacity: 500 });
 
 export function getCacheKey(operation: string, params?: any): string {
-  // Fix: We shouldn't use the session data synchronously here as it's a Promise
-  // Instead, use a consistent format that doesn't depend on the current user
-  // If we need user-specific cache keys, we should make getCacheKey async
   return `cache:${operation}:${JSON.stringify(params)}`;
 }

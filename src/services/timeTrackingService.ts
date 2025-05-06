@@ -7,12 +7,12 @@ import { TimeTracking } from '@/context/TaskTypes';
  */
 export async function getTimeTrackings(): Promise<TimeTracking[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    const userId = await getCurrentUserId();
     
     const { data, error } = await supabase
       .from('time_trackings')
       .select('*')
+      .eq('user_id', userId)
       .order('start_time', { ascending: false });
     
     if (error) throw error;

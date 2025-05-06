@@ -1,7 +1,6 @@
 
 import { HybridTaskProvider } from './providers/HybridTaskProvider';
 import { useTaskContext as useLocalTaskContext } from './providers/TaskContextProvider';
-import { useSupabaseTaskContext } from './providers/SupabaseTaskProvider';
 import { useTimeTrackingContext } from './providers/TimeTrackingProvider';
 import { useViewModeContext } from './providers/ViewModeProvider';
 import type { Task, Project, TimeBlock, TimeTracking, Priority } from './TaskTypes';
@@ -15,7 +14,6 @@ export {
   useTimeTrackingContext,
   useViewModeContext,
   useLocalTaskContext,
-  useSupabaseTaskContext,
   type Task,
   type Project,
   type TimeBlock,

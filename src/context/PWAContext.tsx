@@ -69,6 +69,7 @@ export const PWAProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       },
       onNeedRefresh() {
         setNeedRefresh(true);
+        setNewVersionAvailable(true);
       },
       onUpdate(swUpdate) {
         setUpdateSW(() => swUpdate);

@@ -7,16 +7,15 @@ import { ViewModeProvider } from './ViewModeProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const HybridTaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Always use local storage since we're removing authentication
   return (
     <ErrorBoundary>
-      <ViewModeProvider>
-        <TaskContextProvider>
-          <TimeTrackingProvider>
+      <TaskContextProvider>
+        <TimeTrackingProvider>
+          <ViewModeProvider>
             {children}
-          </TimeTrackingProvider>
-        </TaskContextProvider>
-      </ViewModeProvider>
+          </ViewModeProvider>
+        </TimeTrackingProvider>
+      </TaskContextProvider>
     </ErrorBoundary>
   );
 };

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError, prepareDatesForSupabase, processSupabaseData, getCurrentUserId } from './serviceUtils';
 import { TimeBlock } from '@/context/TaskTypes';
@@ -7,12 +8,12 @@ import { TimeBlock } from '@/context/TaskTypes';
  */
 export async function getTimeBlocks(): Promise<TimeBlock[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    const userId = await getCurrentUserId();
     
     const { data, error } = await supabase
       .from('time_blocks')
       .select('*')
+      .eq('user_id', userId)
       .order('date', { ascending: true });
     
     if (error) throw error;
