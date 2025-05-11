@@ -8,7 +8,8 @@ import { TimeBlock } from '@/context/TaskTypes';
  */
 export async function getTimeBlocks(): Promise<TimeBlock[]> {
   try {
-    const userId = await getCurrentUserId();
+    // Using default user ID since we're removing authentication
+    const userId = 'default-user';
     
     const { data, error } = await supabase
       .from('time_blocks')
@@ -35,7 +36,8 @@ export async function getTimeBlocks(): Promise<TimeBlock[]> {
  */
 export async function createTimeBlock(timeBlock: Omit<TimeBlock, 'id'>): Promise<TimeBlock> {
   try {
-    const userId = await getCurrentUserId();
+    // Using default user ID since we're removing authentication
+    const userId = 'default-user';
     
     const { data, error } = await supabase
       .from('time_blocks')
