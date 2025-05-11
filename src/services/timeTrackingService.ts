@@ -12,13 +12,8 @@ const ensureValidUUID = (id: string): string => {
   }
   
   // For legacy task IDs like "task-4-3", generate a mapping
-  // In a real app, we'd store this mapping but for simplicity we're using a deterministic approach
   try {
     // Create a namespace for our app's task IDs
-    const NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341';
-    
-    // Generate a v5 UUID based on the task ID and our namespace
-    // This will always generate the same UUID for the same task ID
     return uuidv4();
   } catch (error) {
     console.error('Error converting task ID to UUID:', error);
@@ -32,8 +27,8 @@ const ensureValidUUID = (id: string): string => {
  */
 export async function getTimeTrackings(): Promise<TimeTracking[]> {
   try {
-    // Using default user ID since we're removing authentication
-    const userId = 'default-user';
+    // Using default user ID since we're removing authentication - use UUID format
+    const userId = "00000000-0000-0000-0000-000000000000";
     
     const { data, error } = await supabase
       .from('time_trackings')
@@ -64,8 +59,8 @@ export async function startTimeTracking(
   notes?: string
 ): Promise<TimeTracking> {
   try {
-    // Using default user ID since we're removing authentication
-    const userId = 'default-user';
+    // Using default user ID since we're removing authentication - use UUID format
+    const userId = "00000000-0000-0000-0000-000000000000";
     const startTime = new Date();
     
     // Ensure we have a valid UUID for the task ID

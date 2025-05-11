@@ -28,8 +28,8 @@ const ensureValidUUID = (id: string): string => {
  */
 export async function getTimeBlocks(): Promise<TimeBlock[]> {
   try {
-    // Using default user ID since we're removing authentication
-    const userId = 'default-user';
+    // Using default user ID since we're removing authentication - use UUID format
+    const userId = "00000000-0000-0000-0000-000000000000";
     
     const { data, error } = await supabase
       .from('time_blocks')
@@ -58,8 +58,8 @@ export async function getTimeBlocks(): Promise<TimeBlock[]> {
  */
 export async function createTimeBlock(timeBlock: Omit<TimeBlock, 'id'>): Promise<TimeBlock> {
   try {
-    // Using default user ID since we're removing authentication
-    const userId = 'default-user';
+    // Using default user ID since we're removing authentication - use UUID format
+    const userId = "00000000-0000-0000-0000-000000000000";
     
     // Ensure we have a valid UUID for the task ID
     const validTaskId = ensureValidUUID(timeBlock.taskId);
