@@ -1,7 +1,8 @@
 
 import { Task } from './TaskTypes';
+import { v4 as uuidv4 } from 'uuid';
 
-export const generateId = () => Math.random().toString(36).substring(2, 11);
+export const generateId = () => uuidv4();
 
 export const findTaskById = (taskId: string, taskList: Task[]): Task | undefined => {
   for (const task of taskList) {

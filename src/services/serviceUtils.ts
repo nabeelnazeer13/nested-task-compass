@@ -8,11 +8,22 @@ import { Cache } from '@/utils/cache-utils';
  */
 export const handleSupabaseError = (error: any, customMessage?: string) => {
   console.error('Supabase error:', error);
-  toast({
-    title: 'Error',
-    description: customMessage || error.message || 'An unexpected error occurred',
-    variant: 'destructive',
-  });
+  
+  // Check for specific error types
+  if (error?.code === '22P02' && error?.message?.includes('uuid')) {
+    toast({
+      title: 'ID Format Error',
+      description: 'There was an issue with the data format. The application will use UUID format going forward.',
+      variant: 'destructive',
+    });
+  } else {
+    toast({
+      title: 'Error',
+      description: customMessage || error.message || 'An unexpected error occurred',
+      variant: 'destructive',
+    });
+  }
+  
   throw error;
 };
 
