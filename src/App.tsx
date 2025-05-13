@@ -1,36 +1,46 @@
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from "@/components/theme-provider"
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { Toaster } from "@/components/ui/toaster"
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HybridTaskProvider } from "./context/TaskContext";
-import { PWAProvider } from "./context/PWAContext";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import Index from './pages/Index';
+import NotFound from './pages/NotFound';
+import { PWAProvider } from './context/PWAContext';
+import { ViewModeProvider } from './context/providers/ViewModeProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { HybridTaskProvider } from './context/TaskContext';
+import { TimeTrackingProvider } from './context/providers/TimeTrackingProvider';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <ErrorBoundary>
-          <HybridTaskProvider>
-            <PWAProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </PWAProvider>
-          </HybridTaskProvider>
-        </ErrorBoundary>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <ThemeProvider attribute="class" defaultTheme="system">
+            <ErrorBoundary>
+              <HybridTaskProvider>
+                <TimeTrackingProvider>
+                  <ViewModeProvider>
+                    <PWAProvider>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </PWAProvider>
+                  </ViewModeProvider>
+                </TimeTrackingProvider>
+              </HybridTaskProvider>
+            </ErrorBoundary>
+          </ThemeProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+      <Toaster />
+    </QueryClientProvider>
+  );
+}
 
 export default App;

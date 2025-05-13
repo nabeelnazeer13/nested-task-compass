@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useTaskContext, useTimeTrackingContext, Task, TimeTracking } from '@/context/TaskContext';
+import { useTimeTrackingContext, Task, TimeTracking } from '@/context/TaskContext';
 import { 
   Dialog, 
   DialogContent, 
@@ -40,7 +40,8 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
   
   console.log(`TimeTrackingDialog: Rendered for task ${task?.id}`, { 
     taskTitle: task?.title,
-    isCurrentlyTracking: activeTimeTracking?.taskId === task?.id
+    isCurrentlyTracking: activeTimeTracking?.taskId === task?.id,
+    contextAvailable: !!startTimeTracking
   });
   
   const taskTrackings = timeTrackings.filter(tracking => tracking.taskId === task.id);

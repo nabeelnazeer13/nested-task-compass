@@ -15,13 +15,14 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getPriorityColor } from '@/lib/priority-utils';
+import { TimeTrackingProvider } from '@/context/providers/TimeTrackingProvider';
 
 interface TaskItemActionsProps {
   task: Task;
   onAddSubtask: () => void;
 }
 
-const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask }) => {
+const TaskItemActionContent: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask }) => {
   const { updateTask, deleteTask } = useTaskContext();
   const { 
     activeTimeTracking, 
@@ -147,6 +148,14 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+}
+
+const TaskItemActions: React.FC<TaskItemActionsProps> = (props) => {
+  return (
+    <TimeTrackingProvider>
+      <TaskItemActionContent {...props} />
+    </TimeTrackingProvider>
   );
 };
 

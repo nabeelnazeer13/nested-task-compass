@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import TaskDetailsContent from '@/components/tasks/TaskDetailsContent';
 import { usePWAContext } from '@/context/PWAContext';
+import { TimeTrackingProvider } from '@/context/providers/TimeTrackingProvider';
 
 interface TaskItemProps {
   task: Task;
@@ -79,11 +80,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, level }) => {
         parentTaskId={task.id}
       />
       
-      <TimeTrackingDialog
-        open={showTimeTrackingDialog}
-        onOpenChange={setShowTimeTrackingDialog}
-        task={task}
-      />
+      {showTimeTrackingDialog && (
+        <TimeTrackingProvider>
+          <TimeTrackingDialog
+            open={showTimeTrackingDialog}
+            onOpenChange={setShowTimeTrackingDialog}
+            task={task}
+          />
+        </TimeTrackingProvider>
+      )}
 
       <Sheet open={showTaskDetails} onOpenChange={setShowTaskDetails}>
         <SheetContent className={isMobile ? "max-h-[95vh] overflow-y-auto pb-16" : ""}>
