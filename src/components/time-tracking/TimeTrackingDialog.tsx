@@ -30,6 +30,7 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
     activeTimeTracking, 
     startTimeTracking, 
     stopTimeTracking,
+    addTimeTracking,
     updateTimeTracking,
     deleteTimeTracking
   } = useTimeTrackingContext();
@@ -64,9 +65,8 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
     setNotes('');
   };
   
-  const handleAddManualEntry = () => {
-    // Implementation for adding manual time entry
-    console.log('Add manual time entry');
+  const handleAddManualEntry = (entry: Omit<TimeTracking, 'id'>) => {
+    addTimeTracking(entry);
   };
 
   return (
@@ -101,7 +101,10 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
           <div className="border rounded-md">
             <div className="bg-muted/50 p-3 font-medium flex justify-between items-center">
               <h3>Time Tracking History</h3>
-              <ManualTimeEntry onAddManualEntry={handleAddManualEntry} />
+              <ManualTimeEntry 
+                onAddManualEntry={handleAddManualEntry} 
+                taskId={task.id}
+              />
             </div>
             
             <TrackingHistory

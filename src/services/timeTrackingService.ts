@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError, processSupabaseData } from './serviceUtils';
 import { TimeTracking } from '@/context/TaskTypes';
@@ -169,8 +170,8 @@ export async function addManualTimeTracking(
   tracking: Omit<TimeTracking, 'id'>
 ): Promise<TimeTracking> {
   try {
-    // Using default user ID since we're removing authentication
-    const userId = 'default-user';
+    // Using default user ID since we're removing authentication - use UUID format
+    const userId = "00000000-0000-0000-0000-000000000000";
     
     // Ensure we have a valid UUID for the task ID
     const validTaskId = ensureValidUUID(tracking.taskId);
