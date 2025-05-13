@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError, processSupabaseData } from './serviceUtils';
 import { TimeTracking } from '@/context/TaskTypes';
@@ -7,11 +6,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Helper to ensure we have valid UUIDs
 const ensureValidUUID = (id: string): string => {
+  console.log(`Validating task ID: ${id}`);
+  
   // Check if it's already a valid UUID
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    console.log(`Task ID ${id} is already a valid UUID`);
     return id;
   }
   
+  console.log(`Task ID ${id} is not a valid UUID, generating new UUID`);
   // For legacy task IDs like "task-4-3", generate a mapping
   try {
     // Create a namespace for our app's task IDs
@@ -27,9 +30,11 @@ const ensureValidUUID = (id: string): string => {
  * Fetch all time tracking entries for the current user
  */
 export async function getTimeTrackings(): Promise<TimeTracking[]> {
+  console.log('Fetching time trackings');
   try {
     // Using default user ID since we're removing authentication - use UUID format
     const userId = "00000000-0000-0000-0000-000000000000";
+    console.log(`Using default user ID: ${userId}`);
     
     const { data, error } = await supabase
       .from('time_trackings')
@@ -37,7 +42,12 @@ export async function getTimeTrackings(): Promise<TimeTracking[]> {
       .eq('user_id', userId)
       .order('start_time', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching time trackings:', error);
+      throw error;
+    }
+    
+    console.log(`Retrieved ${data?.length || 0} time tracking entries`);
     
     return data.map(tracking => ({
       id: tracking.id,
@@ -48,6 +58,7 @@ export async function getTimeTrackings(): Promise<TimeTracking[]> {
       notes: tracking.notes || undefined
     }));
   } catch (error) {
+    console.error('Failed to fetch time tracking entries:', error);
     return handleSupabaseError(error, 'Failed to fetch time tracking entries');
   }
 }
@@ -59,14 +70,33 @@ export async function startTimeTracking(
   taskId: string, 
   notes?: string
 ): Promise<TimeTracking> {
+  console.log(`Starting time tracking for task: ${taskId}`);
   try {
     // Using default user ID since we're removing authentication - use UUID format
     const userId = "00000000-0000-0000-0000-000000000000";
     const startTime = new Date();
     
-    // Ensure we have a valid UUID for the task ID
-    const validTaskId = ensureValidUUID(taskId);
+    // Check if task exists in the database first
+    console.log(`Checking if task ${taskId} exists in database`);
+    const { data: taskExists, error: taskCheckError } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('id', taskId)
+      .single();
+      
+    if (taskCheckError || !taskExists) {
+      console.error(`Task ${taskId} not found in database:`, taskCheckError);
+      toast(`Task ID ${taskId} not found in database. Time tracking failed.`);
+      throw new Error(`Task ID ${taskId} not found in database: ${taskCheckError?.message || 'No task found'}`);
+    }
     
+    console.log(`Task ${taskId} exists in database, proceeding with time tracking`);
+    
+    // Ensure we have a valid UUID for the task ID
+    const validTaskId = taskId;
+    console.log(`Using task ID: ${validTaskId}`);
+    
+    console.log(`Creating time tracking entry with user ID: ${userId}`);
     const { data, error } = await supabase
       .from('time_trackings')
       .insert({
@@ -79,7 +109,12 @@ export async function startTimeTracking(
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error inserting time tracking entry:', error);
+      throw error;
+    }
+    
+    console.log('Successfully created time tracking entry:', data);
     
     return {
       id: data.id,
@@ -102,6 +137,7 @@ export async function stopTimeTracking(
   timeTrackingId: string,
   taskId: string
 ): Promise<void> {
+  console.log(`Stopping time tracking: ${timeTrackingId} for task ${taskId}`);
   try {
     // Get the time tracking entry
     const { data: trackingData, error: getError } = await supabase
@@ -110,13 +146,19 @@ export async function stopTimeTracking(
       .eq('id', timeTrackingId)
       .single();
     
-    if (getError) throw getError;
+    if (getError) {
+      console.error('Error fetching time tracking entry:', getError);
+      throw getError;
+    }
     
     const startTime = new Date(trackingData.start_time);
     const endTime = new Date();
     const durationInMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
     
+    console.log(`Tracking duration: ${durationInMinutes} minutes`);
+    
     // Update the time tracking entry
+    console.log(`Updating time tracking entry ${timeTrackingId}`);
     const { error: updateError } = await supabase
       .from('time_trackings')
       .update({
@@ -125,16 +167,17 @@ export async function stopTimeTracking(
       })
       .eq('id', timeTrackingId);
     
-    if (updateError) throw updateError;
-    
-    // Ensure we have a valid UUID for the task ID
-    const validTaskId = ensureValidUUID(taskId);
+    if (updateError) {
+      console.error('Error updating time tracking entry:', updateError);
+      throw updateError;
+    }
     
     // Update the task's total tracked time
+    console.log(`Updating tracked time for task ${taskId}`);
     const { data: taskData, error: taskGetError } = await supabase
       .from('tasks')
       .select('time_tracked')
-      .eq('id', validTaskId)
+      .eq('id', taskId)
       .single();
     
     if (taskGetError) {
@@ -145,16 +188,19 @@ export async function stopTimeTracking(
     
     const newTimeTracked = (taskData.time_tracked || 0) + durationInMinutes;
     
+    console.log(`Updating task with new total tracked time: ${newTimeTracked} minutes`);
     const { error: taskUpdateError } = await supabase
       .from('tasks')
       .update({
         time_tracked: newTimeTracked
       })
-      .eq('id', validTaskId);
+      .eq('id', taskId);
     
     if (taskUpdateError) {
       console.error('Error updating task time tracked:', taskUpdateError);
       toast(`Tracking stopped, but couldn't update task total time.`);
+    } else {
+      console.log('Successfully stopped time tracking and updated task');
     }
   } catch (error) {
     console.error('Error stopping time tracking:', error);
@@ -191,7 +237,7 @@ export async function addManualTimeTracking(
     
     if (error) throw error;
     
-    // Update the task's total tracked time
+    // Update the task's total tracked time if duration changed
     try {
       const { data: taskData, error: taskGetError } = await supabase
         .from('tasks')

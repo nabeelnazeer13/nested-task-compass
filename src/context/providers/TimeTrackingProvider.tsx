@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode, TimeTracking, TimeBlock } from '../TaskTypes';
 import { useTimeTrackingActions } from '../hooks/useTimeTrackingActions';
@@ -31,25 +30,34 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   const [activeTimeTracking, setActiveTimeTracking] = useState<TimeTracking | null>(null);
   
   useEffect(() => {
+    console.log('TimeTrackingProvider: Initializing provider');
     loadInitialData();
   }, []);
 
   useEffect(() => {
+    console.log('TimeTrackingProvider: Setting up Supabase channels');
     const channels = [
       supabase.channel('public:time_trackings')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'time_trackings' }, 
-          () => loadTimeTrackings()),
+          (payload) => {
+            console.log('Supabase time_trackings change received:', payload);
+            loadTimeTrackings();
+          }),
 
       supabase.channel('public:time_blocks')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'time_blocks' }, 
-          () => loadTimeBlocks())
+          (payload) => {
+            console.log('Supabase time_blocks change received:', payload);
+            loadTimeBlocks();
+          })
     ];
 
     Promise.all(channels.map(channel => channel.subscribe()));
 
     return () => {
+      console.log('TimeTrackingProvider: Cleaning up Supabase channels');
       channels.forEach(channel => {
         supabase.removeChannel(channel);
       });
@@ -57,11 +65,13 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   }, []);
 
   const loadInitialData = async () => {
+    console.log('TimeTrackingProvider: Loading initial data');
     try {
       await Promise.all([
         loadTimeTrackings(),
         loadTimeBlocks()
       ]);
+      console.log('TimeTrackingProvider: Initial data loaded successfully');
     } catch (error) {
       console.error('Error loading initial data:', error);
       toast({
@@ -73,14 +83,18 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   };
 
   const loadTimeTrackings = async () => {
+    console.log('TimeTrackingProvider: Loading time trackings');
     try {
       const fetchedTimeTrackings = await timeTrackingService.getTimeTrackings();
+      console.log(`TimeTrackingProvider: Fetched ${fetchedTimeTrackings.length} time trackings`);
       
       const activeTracking = fetchedTimeTrackings.find(tracking => !tracking.endTime);
       if (activeTracking) {
+        console.log('TimeTrackingProvider: Found active tracking:', activeTracking);
         setActiveTimeTracking(activeTracking);
         setTimeTrackings(fetchedTimeTrackings.filter(tracking => tracking.endTime));
       } else {
+        console.log('TimeTrackingProvider: No active tracking found');
         setActiveTimeTracking(null);
         setTimeTrackings(fetchedTimeTrackings);
       }
@@ -90,8 +104,10 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   };
 
   const loadTimeBlocks = async () => {
+    console.log('TimeTrackingProvider: Loading time blocks');
     try {
       const fetchedTimeBlocks = await timeBlockService.getTimeBlocks();
+      console.log(`TimeTrackingProvider: Fetched ${fetchedTimeBlocks.length} time blocks`);
       setTimeBlocks(fetchedTimeBlocks);
     } catch (error) {
       console.error('Error loading time blocks:', error);
@@ -99,8 +115,12 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   };
 
   const updateTaskTimeTracked = (taskId: string, additionalMinutes: number) => {
+    console.log(`TimeTrackingProvider: Updating task ${taskId} time tracked by ${additionalMinutes} minutes`);
     const task = findTaskById(taskId, getRootTasks(tasks));
-    if (!task) return;
+    if (!task) {
+      console.error(`TimeTrackingProvider: Task ${taskId} not found`);
+      return;
+    }
     
     if (task.parentId) {
       const updatedTasks = updateTaskInHierarchy(
@@ -111,8 +131,10 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
         }),
         getRootTasks(tasks)
       );
+      console.log('TimeTrackingProvider: Updating task in hierarchy:', updatedTasks[0]);
       updateTask(updatedTasks[0]);
     } else {
+      console.log('TimeTrackingProvider: Updating standalone task:', task.id);
       updateTask({
         ...task,
         timeTracked: (task.timeTracked || 0) + additionalMinutes
@@ -124,28 +146,60 @@ const TimeTrackingProviderBase: React.FC<TimeTrackingProviderProps> = ({
   const timeTrackingActions = useTimeTrackingActions(timeTrackings, setTimeTrackings);
 
   const startTimeTracking = async (taskId: string, notes?: string) => {
+    console.log(`TimeTrackingProvider: Starting time tracking for task ${taskId}`);
+    console.log('Current task list:', tasks.map(t => ({ id: t.id, title: t.title })));
+    
+    const task = findTaskById(taskId, getRootTasks(tasks));
+    if (!task) {
+      console.error(`TimeTrackingProvider: Task ${taskId} not found in current tasks list`);
+      toast({
+        title: "Error starting time tracking",
+        description: `Task not found in your task list. Please try again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       if (activeTimeTracking) {
+        console.log('TimeTrackingProvider: Stopping current active tracking before starting new one');
         await stopTimeTracking();
       }
       
+      console.log(`TimeTrackingProvider: Creating new time tracking for task ${taskId}`);
       const newTracking = await timeTrackingService.startTimeTracking(taskId, notes);
       setActiveTimeTracking(newTracking);
+      console.log('TimeTrackingProvider: Time tracking started successfully', newTracking);
     } catch (error) {
       console.error('Error starting time tracking:', error);
+      toast({
+        title: "Error starting time tracking",
+        description: `Failed to start time tracking for "${task.title}". Please try again.`,
+        variant: "destructive",
+      });
       throw error;
     }
   };
 
   const stopTimeTracking = async () => {
+    console.log('TimeTrackingProvider: Stopping time tracking');
     try {
       if (activeTimeTracking) {
+        console.log(`TimeTrackingProvider: Stopping time tracking ${activeTimeTracking.id}`);
         await timeTrackingService.stopTimeTracking(activeTimeTracking.id, activeTimeTracking.taskId);
         await loadTimeTrackings();
         setActiveTimeTracking(null);
+        console.log('TimeTrackingProvider: Time tracking stopped successfully');
+      } else {
+        console.log('TimeTrackingProvider: No active time tracking to stop');
       }
     } catch (error) {
       console.error('Error stopping time tracking:', error);
+      toast({
+        title: "Error stopping time tracking",
+        description: "Failed to stop time tracking. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     }
   };

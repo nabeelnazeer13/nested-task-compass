@@ -31,6 +31,13 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
   
   const isMobile = useIsMobile();
   const isTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
+  
+  console.log(`TaskItemActions: Rendered for task ${task.id}`, {
+    taskTitle: task.title,
+    isTracking,
+    activeTrackingId: activeTimeTracking?.id,
+    activeTrackingTaskId: activeTimeTracking?.taskId
+  });
 
   const handleToggleCompleted = (checked: boolean) => {
     updateTask({
@@ -44,11 +51,19 @@ const TaskItemActions: React.FC<TaskItemActionsProps> = ({ task, onAddSubtask })
   };
 
   const handleTimeTrackingAction = () => {
+    console.log(`TaskItemActions: Time tracking action clicked for task ${task.id}`, {
+      isCurrentlyTracking: isTracking,
+      taskTitle: task.title
+    });
+    
     if (isTracking) {
+      console.log(`TaskItemActions: Stopping tracking for task ${task.id}`);
       stopTimeTracking();
       toast.success(`Stopped tracking time for "${task.title}"`);
     } else {
+      console.log(`TaskItemActions: Starting tracking for task ${task.id}`);
       if (activeTimeTracking) {
+        console.log(`TaskItemActions: Stopping current tracking on task ${activeTimeTracking.taskId} first`);
         toast.warning(`Stopped tracking "${activeTimeTracking.taskId}" and started tracking "${task.title}"`);
       } else {
         toast.success(`Started tracking time for "${task.title}"`);

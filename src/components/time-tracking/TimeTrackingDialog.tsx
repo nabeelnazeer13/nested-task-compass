@@ -38,12 +38,28 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);
   
+  console.log(`TimeTrackingDialog: Rendered for task ${task?.id}`, { 
+    taskTitle: task?.title,
+    isCurrentlyTracking: activeTimeTracking?.taskId === task?.id
+  });
+  
   const taskTrackings = timeTrackings.filter(tracking => tracking.taskId === task.id);
   const isCurrentlyTracking = activeTimeTracking && activeTimeTracking.taskId === task.id;
+  
+  console.log('TimeTrackingDialog: Current state', {
+    taskTrackings: taskTrackings.length,
+    isCurrentlyTracking,
+    activeTimeTracking: activeTimeTracking ? {
+      id: activeTimeTracking.id,
+      taskId: activeTimeTracking.taskId,
+      startTime: activeTimeTracking.startTime
+    } : null
+  });
   
   useEffect(() => {
     if (!isCurrentlyTracking || !activeTimeTracking) return;
     
+    console.log('TimeTrackingDialog: Setting up elapsed time interval');
     const intervalId = setInterval(() => {
       const now = new Date();
       const startTime = new Date(activeTimeTracking.startTime);
@@ -51,21 +67,27 @@ const TimeTrackingDialog: React.FC<TimeTrackingDialogProps> = ({
       setElapsedTime(elapsedSeconds);
     }, 1000);
     
-    return () => clearInterval(intervalId);
+    return () => {
+      console.log('TimeTrackingDialog: Clearing elapsed time interval');
+      clearInterval(intervalId);
+    };
   }, [isCurrentlyTracking, activeTimeTracking]);
   
   useEffect(() => {
     if (open) {
+      console.log('TimeTrackingDialog: Dialog opened, resetting notes');
       setNotes('');
     }
   }, [open]);
   
   const handleStartTracking = () => {
+    console.log(`TimeTrackingDialog: Starting tracking for task ${task.id}`);
     startTimeTracking(task.id, notes);
     setNotes('');
   };
   
   const handleAddManualEntry = (entry: Omit<TimeTracking, 'id'>) => {
+    console.log('TimeTrackingDialog: Adding manual entry', entry);
     addTimeTracking(entry);
   };
 
