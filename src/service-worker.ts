@@ -1,5 +1,9 @@
-
 /// <reference lib="webworker" />
+/// <reference types="workbox-routing" />
+/// <reference types="workbox-core" />
+/// <reference types="workbox-expiration" />
+/// <reference types="workbox-precaching" />
+/// <reference types="workbox-strategies" />
 
 import { clientsClaim } from 'workbox-core';
 import { ExpirationPlugin } from 'workbox-expiration';
